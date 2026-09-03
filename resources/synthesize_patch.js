@@ -274,8 +274,8 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
       try { console.error(`[Gemini ${targetModel} Request Error]:`, e.message); } catch {}
       resolve(null);
     });
-    req.setTimeout(45000, () => {
-      try { console.error(`[Gemini ${targetModel} Timeout after 45s]`); } catch {}
+    req.setTimeout(12000, () => {
+      try { console.error(`[Gemini ${targetModel} Timeout after 12s]`); } catch {}
       req.destroy();
       resolve(null);
     });
