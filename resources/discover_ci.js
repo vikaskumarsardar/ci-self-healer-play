@@ -52,10 +52,10 @@ if (files.includes('package.json')) {
   language = 'go';
   runner = 'go';
   testCommand = 'go test ./...';
-} else if (files.includes('requirements.txt') || files.includes('pytest.ini') || files.includes('pyproject.toml') || files.includes('setup.py') || files.includes('Pipfile') || files.includes('tox.ini')) {
+} else if (files.includes('requirements.txt') || files.includes('pytest.ini') || files.includes('pyproject.toml') || files.includes('setup.py') || files.includes('Pipfile') || files.includes('tox.ini') || files.some(f => f.endsWith('.py'))) {
   language = 'python';
-  runner = 'pytest';
-  testCommand = 'pytest';
+  runner = 'python3';
+  testCommand = 'python3 -m unittest 2>/dev/null || pytest';
 } else if (files.includes('Cargo.toml')) {
   language = 'rust';
   runner = 'cargo';

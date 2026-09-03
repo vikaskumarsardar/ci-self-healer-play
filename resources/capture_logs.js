@@ -47,8 +47,8 @@ if (logFilePath && fs.existsSync(logFilePath)) {
     }
   } else if (files.includes('go.mod') || files.some(f => f.endsWith('.go'))) {
     testCmd = 'go test ./...';
-  } else if (files.includes('requirements.txt') || files.includes('pytest.ini') || files.includes('pyproject.toml') || files.includes('setup.py') || files.includes('Pipfile') || files.includes('tox.ini')) {
-    testCmd = 'pytest';
+  } else if (files.includes('requirements.txt') || files.includes('pytest.ini') || files.includes('pyproject.toml') || files.includes('setup.py') || files.includes('Pipfile') || files.includes('tox.ini') || files.some(f => f.endsWith('.py'))) {
+    testCmd = 'python3 -m unittest 2>/dev/null || pytest';
   } else if (files.includes('Cargo.toml')) {
     testCmd = 'cargo test';
   }
