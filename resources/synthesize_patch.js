@@ -239,7 +239,7 @@ function parseLlmJson(rawText) {
 function callGeminiApiSingle(apiKey, model, logText, context) {
   return new Promise((resolve) => {
     if (!apiKey) return resolve(null);
-    const targetModel = model || 'gemini-2.0-flash';
+    const targetModel = model || 'gemini-3.6-flash';
     const options = {
       hostname: 'generativelanguage.googleapis.com',
       path: `/v1beta/models/${targetModel}:generateContent?key=${apiKey}`,
