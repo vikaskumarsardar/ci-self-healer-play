@@ -202,6 +202,7 @@ GUIDANCE:
 - Ensure lineEdits do NOT overlap with each other and stay strictly within file line bounds.
 - Use "replacementCode" ONLY when an entire file genuinely needs total replacement or new file creation.
 - Never modify unrelated code.
+- Preserve developer intent: when resolving variable redeclarations or naming collisions, prefer renaming the variable (e.g. `const appName = ...`) or adjusting scope/types over deleting lines, unless the line is an obvious accidental duplicate.
 
 Return ONLY raw JSON matching this exact schema:
 {
