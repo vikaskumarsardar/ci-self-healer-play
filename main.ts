@@ -15,7 +15,7 @@
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.18
+ *   version: 1.2.19
  *   status: released
  *   kind: atomic
  *   flow_type: sequential

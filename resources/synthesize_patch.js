@@ -414,9 +414,15 @@ async function main() {
     }
 
     let patchApplied = false;
+    let actionNorm = (aiDiagnosis.action || '').toUpperCase().trim();
+    if (!actionNorm || actionNorm === 'REFACTOR' || actionNorm === 'MODIFY' || actionNorm === 'FIX' || actionNorm === 'MODIFY_CODE' || actionNorm === 'UPDATE_FILE' || actionNorm === 'FIX_SYNTAX' || actionNorm === 'REFACTOR_CODE') {
+      if (Array.isArray(aiDiagnosis.lineEdits) || aiDiagnosis.replacementCode) {
+        actionNorm = 'REFACTOR_CODE';
+      }
+    }
 
     // 1. Action: INSTALL_DEPENDENCY
-    if (aiDiagnosis.action === 'INSTALL_DEPENDENCY') {
+    if (actionNorm === 'INSTALL_DEPENDENCY') {
       const sanitizedPkg = sanitizePackageName(aiDiagnosis.target);
       if (sanitizedPkg) {
         try {
@@ -445,7 +451,7 @@ async function main() {
       }
     }
     // 2. Action: REFACTOR_CODE or FIX_CONFIG
-    else if (aiDiagnosis.action === 'REFACTOR_CODE' || aiDiagnosis.action === 'FIX_CONFIG') {
+    else if (actionNorm === 'REFACTOR_CODE' || actionNorm === 'FIX_CONFIG') {
       const fileTarget = aiDiagnosis.target.trim();
       if (isSafePath(fileTarget)) {
         const fileToPatch = path.resolve(cwd, fileTarget);
@@ -513,7 +519,7 @@ async function main() {
       }
     }
     // 3. Action: SYNC_ENV_KEY
-    else if (aiDiagnosis.action === 'SYNC_ENV_KEY') {
+    else if (actionNorm === 'SYNC_ENV_KEY') {
       const envKeyClean = aiDiagnosis.envKey.replace(/[^a-zA-Z0-9_]/g, '');
       if (envKeyClean) {
         autoHealed = false;
