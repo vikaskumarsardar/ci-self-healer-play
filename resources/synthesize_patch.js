@@ -51,7 +51,6 @@ const baseUrlArg = (rawBaseUrl && !rawBaseUrl.startsWith('$') && rawBaseUrl.trim
 const rawProvider = getArgValue('provider');
 const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim() : null;
 
-const apiKey = apiKeyArg || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || process.env.api_key;
 const provider = providerArg || process.env.LLM_PROVIDER || (apiKey && (apiKey.startsWith('AQ') || apiKey.startsWith('AIza')) ? 'gemini' : 'openai');
 const isGemini = provider === 'gemini';
 
