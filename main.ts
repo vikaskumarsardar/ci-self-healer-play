@@ -15,7 +15,7 @@
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.11
+ *   version: 1.2.12
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -217,6 +217,8 @@ const overallSuccess =
   verifySuiteStep.outcome.status === "completed" &&
   (verifyData?.testPassed === true || verifyData?.status === "VERIFIED" || statusVal === "VERIFIED");
 
+const pushErrDetail = verifyData?.pushError ? ` (Push Error: ${verifyData.pushError})` : '';
+
 const humanReport = `
 ${overallSuccess
   ? "⚡ Autonomous Universal CI/CD Self-Healing Healer Complete"
@@ -227,7 +229,7 @@ ${overallSuccess
 • AI Healing Engine  : ${engine}
 • Repaired Action    : ${healedDetails}
 • Verification Suite : ${statusVal} (${commandsRunList})
-• Git Delivery Mode  : ${pushStrat} (${branchVal})
+• Git Delivery Mode  : ${pushStrat} (${branchVal})${pushErrDetail}
 `;
 
 out.human(humanReport.trim());
