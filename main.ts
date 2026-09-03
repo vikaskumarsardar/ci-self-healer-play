@@ -15,7 +15,7 @@
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.8
+ *   version: 1.2.9
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -97,6 +97,7 @@
  *     - log_file=$log_file
  *   synthesize_patch:
  *     type: process.exec
+ *     timeout_ms: 120000
  *     depends_on:
  *     - capture_logs
  *     argv:
@@ -110,6 +111,7 @@
  *     - base_url=$base_url
  *   verify_suite:
  *     type: process.exec
+ *     timeout_ms: 120000
  *     depends_on:
  *     - synthesize_patch
  *     argv:
