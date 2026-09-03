@@ -109,8 +109,8 @@ if (testPassed && pushStrategy !== 'none') {
       } catch { /* Fallback */ }
     }
     
-    // 🛡️ Stage project changes while strictly excluding build artifacts and node_modules
-    execFileSync('git', ['add', '.', ':!.rote', ':!node_modules', ':!dist', ':!build', ':!target', ':!__pycache__'], { cwd });
+    // 🛡️ Stage project changes safely
+    execFileSync('git', ['add', '.'], { cwd });
 
     // Safely check current branch
     let originalBranch = 'master';
