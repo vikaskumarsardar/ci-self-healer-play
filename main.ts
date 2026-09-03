@@ -15,7 +15,7 @@
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.25
+ *   version: 1.2.26
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -217,6 +217,7 @@ const overallSuccess =
   verifySuiteStep.outcome.status === "completed" &&
   (verifyData?.testPassed === true || verifyData?.status === "VERIFIED" || statusVal === "VERIFIED");
 
+const pushErrDetail = verifyData?.pushError ? ` (Push Error: ${verifyData.pushError})` : '';
 const durationTimer = synthData?.durationSec ? `\n• Recovery SLA Timer : ${synthData.durationSec} (Patch Synthesis & Local Verification)` : '';
 
 const humanReport = `
