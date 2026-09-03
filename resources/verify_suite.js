@@ -104,7 +104,8 @@ if (testPassed && pushStrategy !== 'none') {
     // Safely check current branch
     let originalBranch = 'master';
     try {
-      originalBranch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd }).toString().trim();
+      const b = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd }).toString().trim();
+      if (b && b !== 'HEAD') originalBranch = b;
     } catch { /* Fallback */ }
 
     targetBranch = originalBranch;
@@ -123,7 +124,8 @@ if (testPassed && pushStrategy !== 'none') {
       execFileSync('git', ['commit', '-m', 'fix(ci-healer): autonomous self-healing patch'], { cwd });
     } catch { /* Handle empty commit cleanly */ }
 
-    execFileSync('git', ['push', 'origin', targetBranch], { cwd });
+    const pushSpec = `HEAD:refs/heads/${targetBranch}`;
+    execFileSync('git', ['push', 'origin', pushSpec], { cwd });
     pushedRemote = true;
   } catch (err) {
     pushError = err.message;
