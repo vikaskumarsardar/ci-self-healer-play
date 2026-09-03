@@ -31,7 +31,11 @@ const rawLogFile = getArgValue('log_file');
 const logFilePath = (rawLogFile && rawLogFile.trim() !== '' && rawLogFile !== 'undefined') ? path.resolve(rawLogFile.trim()) : null;
 
 const rawApiKey = getArgValue('api_key');
-const apiKeyArg = (rawApiKey && !rawApiKey.startsWith('$') && rawApiKey.trim() !== '' && rawApiKey !== 'undefined' && rawApiKey !== 'null') ? rawApiKey.trim() : null;
+let apiKeyArg = (rawApiKey && rawApiKey.trim() !== '' && rawApiKey !== 'undefined' && rawApiKey !== 'null') ? rawApiKey.trim() : null;
+if (apiKeyArg && apiKeyArg.startsWith('$')) {
+  const envName = apiKeyArg.slice(1);
+  apiKeyArg = process.env[envName] || null;
+}
 
 const rawModel = getArgValue('model');
 const modelArg = (rawModel && !rawModel.startsWith('$') && rawModel.trim() !== '' && rawModel !== 'undefined' && rawModel !== 'null') ? rawModel.trim() : null;
@@ -42,7 +46,7 @@ const baseUrlArg = (rawBaseUrl && !rawBaseUrl.startsWith('$') && rawBaseUrl.trim
 const rawProvider = getArgValue('provider');
 const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim() : null;
 
-const apiKey = apiKeyArg || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || process.env.LLM_API_KEY;
+const apiKey = apiKeyArg || process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || process.env.api_key;
 const provider = providerArg || process.env.LLM_PROVIDER || (apiKey && (apiKey.startsWith('AQ') || apiKey.startsWith('AIza')) ? 'gemini' : 'openai');
 const isGemini = provider === 'gemini';
 
