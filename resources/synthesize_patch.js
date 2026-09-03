@@ -278,8 +278,8 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
       try { console.error(`[Gemini ${targetModel} Request Error]:`, e.message); } catch {}
       resolve(null);
     });
-    req.setTimeout(8000, () => {
-      try { console.error(`[Gemini ${targetModel} Timeout after 8s]`); } catch {}
+    req.setTimeout(6000, () => {
+      try { console.error(`[Gemini ${targetModel} Timeout after 6s]`); } catch {}
       req.destroy();
       resolve(null);
     });
@@ -292,20 +292,15 @@ async function callGeminiApi(apiKey, model, logText, context) {
   const fallbackList = [
     model,
     'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-flash-latest',
-    'gemini-2.5-flash'
+    'gemini-1.5-flash'
   ].filter(Boolean);
 
   const modelsToTry = [...new Set(fallbackList)];
 
   for (const m of modelsToTry) {
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      console.error(`[Gemini LLM] Querying model ${m} (Attempt ${attempt})...`);
-      const result = await callGeminiApiSingle(apiKey, m, logText, context);
-      if (result) return result;
-      await new Promise(r => setTimeout(r, 1500));
-    }
+    try { console.error(`[Gemini LLM] Querying model ${m}...`); } catch {}
+    const result = await callGeminiApiSingle(apiKey, m, logText, context);
+    if (result) return result;
   }
   return null;
 }
