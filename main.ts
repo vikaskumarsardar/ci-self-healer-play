@@ -11,11 +11,11 @@
  * @rote-frontmatter
  * ---
  * name: ci-self-healer
- * description: "Autonomous Universal Cloud LLM CI/CD Failure Diagnoser & Self-Healing Repair Play for Node.js, Go, Python, Rust, and Make"
+ * description: Autonomous Universal Cloud LLM CI/CD Failure Diagnoser & Self-Healing Repair Play for Node.js, Go, Python, Rust, and Make
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.7
+ *   version: 1.2.8
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -26,99 +26,99 @@
  *   requires_endpoints: []
  *   discoverability:
  *     tags:
- *       - ci-cd
- *       - test-healer
- *       - self-healing
- *       - ai-agent
- *       - gemini-llm
- *       - cloud-llm
- *       - auto-push
- *       - push-strategy
- *       - github-api
- *       - gitlab-api
+ *     - ci-cd
+ *     - test-healer
+ *     - self-healing
+ *     - ai-agent
+ *     - gemini-llm
+ *     - cloud-llm
+ *     - auto-push
+ *     - push-strategy
+ *     - github-api
+ *     - gitlab-api
  * parameters:
- *   - name: auto_push
- *     param_type: boolean
- *     required: false
- *     description: "Set to true to automatically commit and push verified self-healing patches back to Git remote"
- *   - name: push_strategy
- *     param_type: string
- *     required: false
- *     description: "Git delivery strategy (direct: push to active branch, branch: create fix/ci-healer branch, pr: create branch & pull request, none: dry-run)"
- *   - name: api_key
- *     param_type: string
- *     required: false
- *     description: "Gemini / OpenAI Cloud LLM API Key for autonomous AI patch synthesis"
- *   - name: model
- *     param_type: string
- *     required: false
- *     description: "Cloud LLM Model name (e.g. gemini-3.5-flash, gemini-flash-latest, gpt-4o-mini)"
- *   - name: provider
- *     param_type: string
- *     required: false
- *     description: "Provider override (gemini, openai, ollama)"
- *   - name: base_url
- *     param_type: string
- *     required: false
- *     description: "Custom OpenAI-compatible API base URL (e.g. http://localhost:11434/v1 for Ollama)"
- *   - name: github_token
- *     param_type: string
- *     required: false
- *     description: "Optional GitHub Personal Access Token or GITHUB_TOKEN for GitHub Actions API access"
- *   - name: gitlab_token
- *     param_type: string
- *     required: false
- *     description: "Optional GitLab Personal Access Token or GITLAB_TOKEN for GitLab Pipelines API access"
- *   - name: log_file
- *     param_type: string
- *     required: false
- *     description: "Path to raw CI log file (defaults to live test execution stream)"
- *   - name: target_dir
- *     param_type: string
- *     required: false
- *     description: "Target repository directory (defaults to current working directory)"
+ * - name: auto_push
+ *   param_type: boolean
+ *   required: false
+ *   description: Set to true to automatically commit and push verified self-healing patches back to Git remote
+ * - name: push_strategy
+ *   param_type: string
+ *   required: false
+ *   description: 'Git delivery strategy (direct: push to active branch, branch: create fix/ci-healer branch, pr: create branch & pull request, none: dry-run)'
+ * - name: api_key
+ *   param_type: string
+ *   required: false
+ *   description: Gemini / OpenAI Cloud LLM API Key for autonomous AI patch synthesis
+ * - name: model
+ *   param_type: string
+ *   required: false
+ *   description: Cloud LLM Model name (e.g. gemini-3.5-flash, gemini-flash-latest, gpt-4o-mini)
+ * - name: provider
+ *   param_type: string
+ *   required: false
+ *   description: Provider override (gemini, openai, ollama)
+ * - name: base_url
+ *   param_type: string
+ *   required: false
+ *   description: Custom OpenAI-compatible API base URL (e.g. http://localhost:11434/v1 for Ollama)
+ * - name: github_token
+ *   param_type: string
+ *   required: false
+ *   description: Optional GitHub Personal Access Token or GITHUB_TOKEN for GitHub Actions API access
+ * - name: gitlab_token
+ *   param_type: string
+ *   required: false
+ *   description: Optional GitLab Personal Access Token or GITLAB_TOKEN for GitLab Pipelines API access
+ * - name: log_file
+ *   param_type: string
+ *   required: false
+ *   description: Path to raw CI log file (defaults to live test execution stream)
+ * - name: target_dir
+ *   param_type: string
+ *   required: false
+ *   description: Target repository directory (defaults to current working directory)
  * steps:
  *   discover_ci:
  *     type: process.exec
  *     argv:
- *       - node
- *       - "@resource{discover_ci.js}"
- *       - "target_dir=$target_dir"
- *       - "github_token=$github_token"
- *       - "gitlab_token=$gitlab_token"
+ *     - node
+ *     - '@resource{discover_ci.js}'
+ *     - target_dir=$target_dir
+ *     - github_token=$github_token
+ *     - gitlab_token=$gitlab_token
  *   capture_logs:
  *     type: process.exec
  *     depends_on:
- *       - discover_ci
+ *     - discover_ci
  *     argv:
- *       - node
- *       - "@resource{capture_logs.js}"
- *       - "target_dir=$target_dir"
- *       - "log_file=$log_file"
+ *     - node
+ *     - '@resource{capture_logs.js}'
+ *     - target_dir=$target_dir
+ *     - log_file=$log_file
  *   synthesize_patch:
  *     type: process.exec
  *     depends_on:
- *       - capture_logs
+ *     - capture_logs
  *     argv:
- *       - node
- *       - "@resource{synthesize_patch.js}"
- *       - "target_dir=$target_dir"
- *       - "log_file=$log_file"
- *       - "api_key=$api_key"
- *       - "model=$model"
- *       - "provider=$provider"
- *       - "base_url=$base_url"
+ *     - node
+ *     - '@resource{synthesize_patch.js}'
+ *     - target_dir=$target_dir
+ *     - log_file=$log_file
+ *     - api_key=$api_key
+ *     - model=$model
+ *     - provider=$provider
+ *     - base_url=$base_url
  *   verify_suite:
  *     type: process.exec
  *     depends_on:
- *       - synthesize_patch
+ *     - synthesize_patch
  *     argv:
- *       - node
- *       - "@resource{verify_suite.js}"
- *       - "target_dir=$target_dir"
- *       - "auto_push=$auto_push"
- *       - "push_strategy=$push_strategy"
- *       - "github_token=$github_token"
+ *     - node
+ *     - '@resource{verify_suite.js}'
+ *     - target_dir=$target_dir
+ *     - auto_push=$auto_push
+ *     - push_strategy=$push_strategy
+ *     - github_token=$github_token
  * ---
  */
 
