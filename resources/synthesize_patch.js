@@ -254,10 +254,16 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
         let errBody = '';
         res.on('data', c => errBody += c);
         res.on('end', () => {
-          let msg = `Gemini API returned HTTP ${res.statusCode}`;
+          let msg = `HTTP ${res.statusCode}`;
           try {
             const parsed = JSON.parse(errBody);
-            if (parsed.error?.message) msg += `: ${parsed.error.message}`;
+            if (parsed.error?.status === 'RESOURCE_EXHAUSTED' || res.statusCode === 429) {
+              const retryMatch = (parsed.error?.message || '').match(/retry in ([\d\.]+)s/i);
+              const retrySec = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
+              msg = `Gemini Rate Limit Exceeded (HTTP 429)\n                       ↳ Free tier limit reached (20 req/min)\n                       ↳ Action: Retry in ${retrySec} seconds`;
+            } else if (parsed.error?.message) {
+              msg = `API Error (HTTP ${res.statusCode}): ${parsed.error.message.slice(0, 100)}`;
+            }
           } catch {}
           resolve({ error: msg });
         });
