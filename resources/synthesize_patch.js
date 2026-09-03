@@ -300,23 +300,9 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
 }
 
 async function callGeminiApi(apiKey, model, logText, context) {
-  const fallbackList = [
-    model,
-    'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-flash-latest'
-  ].filter(Boolean);
-
-  const modelsToTry = [...new Set(fallbackList)];
-
-  let lastError = null;
-  for (const m of modelsToTry) {
-    try { console.error(`[Gemini LLM] Querying model ${m}...`); } catch {}
-    const result = await callGeminiApiSingle(apiKey, m, logText, context);
-    if (result && !result.error) return result;
-    if (result && result.error) lastError = result.error;
-  }
-  return lastError ? { error: lastError } : null;
+  const targetModel = model || 'gemini-2.0-flash';
+  try { console.error(`[Gemini LLM] Querying model ${targetModel}...`); } catch {}
+  return await callGeminiApiSingle(apiKey, targetModel, logText, context);
 }
 
 function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
