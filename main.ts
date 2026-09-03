@@ -15,7 +15,7 @@
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.17
+ *   version: 1.2.18
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -196,7 +196,7 @@ const verifyData = verifySuiteStep.outcome.status === "completed" ? parseBodyJso
 const projLang = discoverData?.project?.language || discoverData?.language || 'node';
 const projRunner = discoverData?.project?.runner || discoverData?.runner || 'npm';
 const engine = synthData?.engine || 'GEMINI_CLOUD_LLM';
-const healedDetails = synthData?.healedActionDetails || synthData?.aiDiagnosis?.explanation || synthData?.errorReason || 'Self-healing patch applied and verified';
+const healedDetails = synthData?.healedActionDetails || synthData?.aiDiagnosis?.explanation || synthData?.reason || synthData?.errorReason || (synthData?.patchApplied === false ? 'LLM synthesis returned no patch' : 'Self-healing patch applied and verified');
 
 const statusVal =
   (typeof verifyData?.status === 'string'

@@ -254,8 +254,12 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
         let errBody = '';
         res.on('data', c => errBody += c);
         res.on('end', () => {
-          try { console.error(`[Gemini API ${targetModel} Error ${res.statusCode}]:`, errBody); } catch {}
-          resolve(null);
+          let msg = `Gemini API returned HTTP ${res.statusCode}`;
+          try {
+            const parsed = JSON.parse(errBody);
+            if (parsed.error?.message) msg += `: ${parsed.error.message}`;
+          } catch {}
+          resolve({ error: msg });
         });
         return;
       }
