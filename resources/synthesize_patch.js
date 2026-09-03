@@ -303,12 +303,14 @@ async function callGeminiApi(apiKey, model, logText, context) {
 
   const modelsToTry = [...new Set(fallbackList)];
 
+  let lastError = null;
   for (const m of modelsToTry) {
     try { console.error(`[Gemini LLM] Querying model ${m}...`); } catch {}
     const result = await callGeminiApiSingle(apiKey, m, logText, context);
-    if (result) return result;
+    if (result && !result.error) return result;
+    if (result && result.error) lastError = result.error;
   }
-  return null;
+  return lastError ? { error: lastError } : null;
 }
 
 function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
@@ -393,33 +395,41 @@ async function main() {
       }
     }
 
-    finalDiagnosis = aiDiagnosis;
-    errorReason = null; // Reset for current attempt
-
-    if (!aiDiagnosis) {
-      errorReason = apiKey ? 'LLM diagnosis unavailable or invalid' : 'No LLM API key configured';
+    if (!aiDiagnosis || aiDiagnosis.error) {
+      errorReason = aiDiagnosis?.error || (apiKey ? 'LLM diagnosis unavailable or invalid' : 'No LLM API key configured');
+      finalDiagnosis = null;
       break;
-    } else if (!validActions.includes(aiDiagnosis.action)) {
+    }
+
+    // Normalize action and default missing targets before validation
+    let actionNorm = (aiDiagnosis.action || '').toUpperCase().trim();
+    if (!actionNorm || actionNorm === 'REFACTOR' || actionNorm === 'MODIFY' || actionNorm === 'FIX' || actionNorm === 'MODIFY_CODE' || actionNorm === 'UPDATE_FILE' || actionNorm === 'FIX_SYNTAX' || actionNorm === 'REFACTOR_CODE') {
+      if (Array.isArray(aiDiagnosis.lineEdits) || aiDiagnosis.replacementCode || aiDiagnosis.target) {
+        actionNorm = 'REFACTOR_CODE';
+        aiDiagnosis.action = 'REFACTOR_CODE';
+      }
+    }
+
+    if (!validActions.includes(actionNorm)) {
       errorReason = `Unsupported AI action: ${aiDiagnosis.action}`;
       break;
-    } else if (aiDiagnosis.action === 'INSTALL_DEPENDENCY' && !aiDiagnosis.target) {
+    } else if (actionNorm === 'INSTALL_DEPENDENCY' && !aiDiagnosis.target) {
       errorReason = 'INSTALL_DEPENDENCY requires a target package specification';
       break;
-    } else if ((aiDiagnosis.action === 'REFACTOR_CODE' || aiDiagnosis.action === 'FIX_CONFIG') && !aiDiagnosis.target) {
-      errorReason = `${aiDiagnosis.action} requires a target file specification`;
-      break;
-    } else if (aiDiagnosis.action === 'SYNC_ENV_KEY' && !aiDiagnosis.envKey) {
+    } else if ((actionNorm === 'REFACTOR_CODE' || actionNorm === 'FIX_CONFIG') && !aiDiagnosis.target) {
+      // Auto-fallback target if Gemini omitted target field but provided line edits
+      if (targetFiles.length > 0) {
+        aiDiagnosis.target = targetFiles[0];
+      } else {
+        errorReason = `${actionNorm} requires a target file specification`;
+        break;
+      }
+    } else if (actionNorm === 'SYNC_ENV_KEY' && !aiDiagnosis.envKey) {
       errorReason = 'SYNC_ENV_KEY requires an envKey specification';
       break;
     }
 
     let patchApplied = false;
-    let actionNorm = (aiDiagnosis.action || '').toUpperCase().trim();
-    if (!actionNorm || actionNorm === 'REFACTOR' || actionNorm === 'MODIFY' || actionNorm === 'FIX' || actionNorm === 'MODIFY_CODE' || actionNorm === 'UPDATE_FILE' || actionNorm === 'FIX_SYNTAX' || actionNorm === 'REFACTOR_CODE') {
-      if (Array.isArray(aiDiagnosis.lineEdits) || aiDiagnosis.replacementCode) {
-        actionNorm = 'REFACTOR_CODE';
-      }
-    }
 
     // 1. Action: INSTALL_DEPENDENCY
     if (actionNorm === 'INSTALL_DEPENDENCY') {
