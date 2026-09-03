@@ -93,10 +93,21 @@ let pushedRemote = false;
 let pushError = null;
 let targetBranch = null;
 
+const rawGithubToken = getArgValue('github_token');
+const githubToken = (rawGithubToken && !rawGithubToken.startsWith('$') && rawGithubToken !== 'undefined' && rawGithubToken !== 'null')
+  ? rawGithubToken.trim()
+  : (process.env.GITHUB_TOKEN || null);
+
 if (testPassed && pushStrategy !== 'none') {
   try {
     execFileSync('git', ['config', 'user.name', 'Rote-CI-Healer-Bot'], { cwd });
     execFileSync('git', ['config', 'user.email', 'ci-healer@modiqo.ai'], { cwd });
+
+    if (githubToken && process.env.GITHUB_REPOSITORY) {
+      try {
+        execFileSync('git', ['remote', 'set-url', 'origin', `https://x-access-token:${githubToken}@github.com/${process.env.GITHUB_REPOSITORY}.git`], { cwd });
+      } catch { /* Fallback */ }
+    }
     
     // 🛡️ Stage project changes while strictly excluding build artifacts and node_modules
     execFileSync('git', ['add', '.', ':!.rote', ':!node_modules', ':!dist', ':!build', ':!target', ':!__pycache__'], { cwd });
