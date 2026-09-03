@@ -37,7 +37,22 @@ if (pushStrategy !== 'direct' && pushStrategy !== 'branch' && pushStrategy !== '
   pushStrategy = 'direct';
 }
 
-const files = fs.existsSync(cwd) ? fs.readdirSync(cwd) : [];
+function resolveProjectRoot(dir) {
+  const target = path.resolve(dir || '.');
+  const manifests = ['package.json', 'go.mod', 'requirements.txt', 'pytest.ini', 'pyproject.toml', 'Cargo.toml', 'Gemfile', 'Rakefile'];
+  if (fs.existsSync(target)) {
+    const files = fs.readdirSync(target);
+    if (manifests.some(m => files.includes(m))) return target;
+  }
+  if (fs.existsSync(process.cwd())) {
+    const procFiles = fs.readdirSync(process.cwd());
+    if (manifests.some(m => procFiles.includes(m))) return process.cwd();
+  }
+  return target;
+}
+
+const resolvedCwd = resolveProjectRoot(cwd);
+const files = fs.existsSync(resolvedCwd) ? fs.readdirSync(resolvedCwd) : [];
 const commandsToRun = [];
 
 if (files.includes('package.json')) {

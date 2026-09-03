@@ -33,7 +33,22 @@ let rawLogText = '';
 if (logFilePath && fs.existsSync(logFilePath)) {
   rawLogText = fs.readFileSync(logFilePath, 'utf8');
 } else {
-  const files = fs.existsSync(cwd) ? fs.readdirSync(cwd) : [];
+  function resolveProjectRoot(dir) {
+  const target = path.resolve(dir || '.');
+  const manifests = ['package.json', 'go.mod', 'requirements.txt', 'pytest.ini', 'pyproject.toml', 'Cargo.toml', 'Gemfile', 'Rakefile'];
+  if (fs.existsSync(target)) {
+    const files = fs.readdirSync(target);
+    if (manifests.some(m => files.includes(m))) return target;
+  }
+  if (fs.existsSync(process.cwd())) {
+    const procFiles = fs.readdirSync(process.cwd());
+    if (manifests.some(m => procFiles.includes(m))) return process.cwd();
+  }
+  return target;
+}
+
+const resolvedCwd = resolveProjectRoot(cwd);
+const files = fs.existsSync(resolvedCwd) ? fs.readdirSync(resolvedCwd) : [];
   let buildCmd = '';
   let testCmd = '';
 
