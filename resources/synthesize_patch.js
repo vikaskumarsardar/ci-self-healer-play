@@ -32,10 +32,15 @@ const logFilePath = (rawLogFile && rawLogFile.trim() !== '' && rawLogFile !== 'u
 
 const rawApiKey = getArgValue('api_key');
 let apiKeyArg = (rawApiKey && rawApiKey.trim() !== '' && rawApiKey !== 'undefined' && rawApiKey !== 'null') ? rawApiKey.trim() : null;
+
 if (apiKeyArg && apiKeyArg.startsWith('$')) {
   const envName = apiKeyArg.slice(1);
   apiKeyArg = process.env[envName] || null;
 }
+
+const apiKey = (apiKeyArg && !apiKeyArg.startsWith('$'))
+  ? apiKeyArg
+  : (process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY || process.env.LLM_API_KEY || process.env.api_key || null);
 
 const rawModel = getArgValue('model');
 const modelArg = (rawModel && !rawModel.startsWith('$') && rawModel.trim() !== '' && rawModel !== 'undefined' && rawModel !== 'null') ? rawModel.trim() : null;
