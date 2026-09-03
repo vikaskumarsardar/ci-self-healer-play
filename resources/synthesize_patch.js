@@ -355,6 +355,7 @@ function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
 }
 
 async function main() {
+  const startTime = Date.now();
   let autoHealed = false;
   let healedActionDetails = null;
   let requiresSecret = false;
@@ -547,6 +548,7 @@ async function main() {
     }
   }
 
+  const durationSec = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
   process.stdout.write(JSON.stringify({
     status: errorReason ? 'REJECTED' : 'DIAGNOSED',
     engine: finalDiagnosis ? (isGemini ? 'GEMINI_CLOUD_LLM' : (baseUrlArg ? 'CUSTOM_OPENAI_COMPATIBLE_LLM' : 'OPENAI_CLOUD_LLM')) : 'NO_LLM_DIAGNOSIS',
@@ -556,6 +558,7 @@ async function main() {
     requiresSecret,
     healedActionDetails,
     errorReason,
+    durationSec,
     attemptsExecuted: attemptsCount,
     targetFile: finalDiagnosis?.target || null,
     cwd

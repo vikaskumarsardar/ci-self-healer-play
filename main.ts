@@ -15,7 +15,7 @@
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  * metadata:
- *   version: 1.2.24
+ *   version: 1.2.25
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -217,7 +217,7 @@ const overallSuccess =
   verifySuiteStep.outcome.status === "completed" &&
   (verifyData?.testPassed === true || verifyData?.status === "VERIFIED" || statusVal === "VERIFIED");
 
-const pushErrDetail = verifyData?.pushError ? ` (Push Error: ${verifyData.pushError})` : '';
+const durationTimer = synthData?.durationSec ? `\n• Recovery SLA Timer : ${synthData.durationSec} (Patch Synthesis & Local Verification)` : '';
 
 const humanReport = `
 ${overallSuccess
@@ -227,7 +227,7 @@ ${overallSuccess
 📊 Pipeline Diagnostics Summary:
 • Project Ecosystem  : ${projLang.toUpperCase()} (${projRunner})
 • AI Healing Engine  : ${engine}
-• Repaired Action    : ${healedDetails}
+• Repaired Action    : ${healedDetails}${durationTimer}
 • Verification Suite : ${statusVal} (${commandsRunList})
 • Git Delivery Mode  : ${pushStrat} (${branchVal})${pushErrDetail}
 `;
