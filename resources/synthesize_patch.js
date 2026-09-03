@@ -54,13 +54,13 @@ const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.
 const provider = providerArg || process.env.LLM_PROVIDER || (apiKey && (apiKey.startsWith('AQ') || apiKey.startsWith('AIza')) ? 'gemini' : 'openai');
 const isGemini = provider === 'gemini';
 
-let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-2.0-flash' : 'gpt-4o-mini');
+let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-3.5-flash' : 'gpt-4o-mini');
 
 try {
   console.error(`[synthesize_patch DEBUG] cwd=${cwd}, hasApiKey=${Boolean(apiKey)}, apiKeyLength=${apiKey ? apiKey.length : 0}, provider=${provider}, model=${model}`);
 } catch {}
 
-if (isGemini && (model === 'gemini-1.5-flash' || model === 'gemini-1.5-pro' || model === 'gemini-pro')) {
+if (isGemini && (model === 'gemini-1.5-flash' || model === 'gemini-1.5-pro' || model === 'gemini-pro' || model === 'gemini-2.0-flash')) {
   model = 'gemini-3.5-flash';
 }
 
@@ -278,8 +278,8 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
       try { console.error(`[Gemini ${targetModel} Request Error]:`, e.message); } catch {}
       resolve(null);
     });
-    req.setTimeout(6000, () => {
-      try { console.error(`[Gemini ${targetModel} Timeout after 6s]`); } catch {}
+    req.setTimeout(45000, () => {
+      try { console.error(`[Gemini ${targetModel} Timeout after 45s]`); } catch {}
       req.destroy();
       resolve(null);
     });
@@ -291,8 +291,9 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
 async function callGeminiApi(apiKey, model, logText, context) {
   const fallbackList = [
     model,
-    'gemini-2.0-flash',
-    'gemini-1.5-flash'
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-flash-latest'
   ].filter(Boolean);
 
   const modelsToTry = [...new Set(fallbackList)];
