@@ -60,6 +60,10 @@ if (files.includes('package.json')) {
   language = 'rust';
   runner = 'cargo';
   testCommand = 'cargo test';
+} else if (files.includes('Gemfile') || files.includes('Rakefile') || files.some(f => f.endsWith('.rb'))) {
+  language = 'ruby';
+  runner = 'ruby';
+  testCommand = 'ruby -e "Dir.glob(\'./**/*_test.rb\').each { |f| require f }"';
 } else if (files.includes('Makefile')) {
   language = 'make';
   runner = 'make';

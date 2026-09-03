@@ -56,6 +56,8 @@ if (files.includes('package.json')) {
   commandsToRun.push('python3 -m unittest 2>/dev/null || pytest');
 } else if (files.includes('Cargo.toml')) {
   commandsToRun.push('cargo test');
+} else if (files.includes('Gemfile') || files.includes('Rakefile') || files.some(f => f.endsWith('.rb'))) {
+  commandsToRun.push('ruby -e "Dir.glob(\'./**/*_test.rb\').each { |f| require f }"');
 }
 
 // 🛡️ Security & Integrity Guard: Fail if no supported verification command was detected

@@ -51,6 +51,8 @@ if (logFilePath && fs.existsSync(logFilePath)) {
     testCmd = 'python3 -m unittest 2>/dev/null || pytest';
   } else if (files.includes('Cargo.toml')) {
     testCmd = 'cargo test';
+  } else if (files.includes('Gemfile') || files.includes('Rakefile') || files.some(f => f.endsWith('.rb'))) {
+    testCmd = 'ruby -e "Dir.glob(\'./**/*_test.rb\').each { |f| require f }"';
   }
 
   const commandsToRun = [buildCmd, testCmd].filter(Boolean);
