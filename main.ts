@@ -12,8 +12,10 @@
  * ---
  * name: ci-self-healer
  * description: Autonomous Universal Cloud LLM CI/CD Failure Diagnoser & Self-Healing Repair Play for Node.js, Go, Python, Rust, and Make
+ * provenance_url: https://github.com/vikaskumarsardar/ci-self-healer-play
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
+ *   url: https://github.com/vikaskumarsardar/ci-self-healer-play
  * metadata:
  *   version: 1.2.28
  *   status: released
