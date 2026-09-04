@@ -134,8 +134,8 @@ if (testPassed && pushStrategy !== 'none') {
       } catch { /* Fallback */ }
     }
     
-    // 🛡️ Stage project changes safely
-    execFileSync('git', ['add', '.'], { cwd });
+    // 🛡️ Stage project changes safely (excluding temporary artifacts & build directories)
+    execFileSync('git', ['add', '.', ':(exclude).rote', ':(exclude)node_modules', ':(exclude)dist', ':(exclude)build', ':(exclude)target', ':(exclude)__pycache__'], { cwd });
 
     // Safely check current branch
     let originalBranch = 'master';

@@ -1,6 +1,6 @@
 {
-  "flow_name": "/home/user/Desktop/rote-playoffs-hackathon/.rote/plays/ci-test-healer",
-  "flow_path": "/home/user/Desktop/rote-playoffs-hackathon/.rote/plays/ci-test-healer/main.ts",
+  "flow_name": "main.ts",
+  "flow_path": "main.ts",
   "static_checks_passed": true,
   "runtime_checks_passed": true,
   "violations": [
@@ -12,6 +12,6 @@
       "is_error": false
     }
   ],
-  "linted_at": "2026-09-04T15:18:56.051274314Z",
+  "linted_at": "2026-09-04T15:52:31.071075425Z",
   "rote_version": "0.79.0"
 }
