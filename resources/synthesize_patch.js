@@ -90,20 +90,22 @@ const modelArg = (rawModel && !rawModel.startsWith('$') && rawModel.trim() !== '
 const rawBaseUrl = getArgValue('base_url');
 let baseUrlArg = (rawBaseUrl && !rawBaseUrl.startsWith('$') && rawBaseUrl.trim() !== '' && rawBaseUrl !== 'undefined' && rawBaseUrl !== 'null') ? rawBaseUrl.trim() : null;
 
-if (baseUrlArg && (baseUrlArg.includes('11434') || baseUrlArg.includes('localhost') || baseUrlArg.includes('127.0.0.1')) && apiKey && (apiKey.startsWith('sk-') || apiKey.startsWith('AIza'))) {
-  baseUrlArg = null;
-}
-
 const rawProvider = getArgValue('provider');
 const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim().toLowerCase() : null;
 
 let provider = providerArg || process.env.LLM_PROVIDER;
-if (apiKey && apiKey.startsWith('sk-')) {
-  provider = 'openai';
-} else if (apiKey && (apiKey.startsWith('AIza') || apiKey.startsWith('AQ'))) {
-  provider = 'gemini';
-} else if (!provider) {
-  provider = 'openai';
+if (!provider) {
+  if (apiKey && apiKey.startsWith('sk-')) {
+    provider = 'openai';
+  } else if (apiKey && apiKey.startsWith('AIza')) {
+    provider = 'gemini';
+  } else {
+    provider = 'openai';
+  }
+}
+
+if (baseUrlArg && (baseUrlArg.includes('11434') || baseUrlArg.includes('localhost') || baseUrlArg.includes('127.0.0.1')) && provider !== 'ollama' && apiKey && (apiKey.startsWith('sk-') || apiKey.startsWith('AIza'))) {
+  baseUrlArg = null;
 }
 
 const isGemini = provider === 'gemini';
