@@ -57,12 +57,19 @@ const rawBaseUrl = getArgValue('base_url');
 const baseUrlArg = (rawBaseUrl && !rawBaseUrl.startsWith('$') && rawBaseUrl.trim() !== '' && rawBaseUrl !== 'undefined' && rawBaseUrl !== 'null') ? rawBaseUrl.trim() : null;
 
 const rawProvider = getArgValue('provider');
-const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim() : null;
+const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim().toLowerCase() : null;
 
-const provider = providerArg || process.env.LLM_PROVIDER || (apiKey && (apiKey.startsWith('AQ') || apiKey.startsWith('AIza')) ? 'gemini' : 'openai');
+let provider = providerArg || process.env.LLM_PROVIDER;
+if (apiKey && apiKey.startsWith('sk-')) {
+  provider = 'openai';
+} else if (apiKey && (apiKey.startsWith('AIza') || apiKey.startsWith('AQ'))) {
+  provider = 'gemini';
+} else if (!provider) {
+  provider = 'gemini';
+}
+
 const isGemini = provider === 'gemini';
-
-let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-3.7-flash' : 'gpt-4o-mini');
+let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-1.5-flash' : 'gpt-4o-mini');
 
 try {
   console.error(`[synthesize_patch DEBUG] cwd=${cwd}, hasApiKey=${Boolean(apiKey)}, apiKeyLength=${apiKey ? apiKey.length : 0}, provider=${provider}, model=${model}`);
