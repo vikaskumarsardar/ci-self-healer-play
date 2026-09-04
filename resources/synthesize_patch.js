@@ -307,15 +307,28 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
 }
 
 async function callGeminiApi(apiKey, model, logText, context) {
-  const targetModel = model || 'gemini-3.7-flash';
-  try { console.error(`[Gemini LLM] Querying model ${targetModel}...`); } catch {}
-  let result = await callGeminiApiSingle(apiKey, targetModel, logText, context);
-  if (result && result.error && (result.error.includes('503') || result.error.includes('high demand') || result.error.includes('429'))) {
-    const fallbackModel = targetModel === 'gemini-2.0-flash' ? 'gemini-1.5-flash' : 'gemini-2.0-flash';
-    try { console.error(`[Gemini LLM] High demand on ${targetModel}. Retrying automatically with ${fallbackModel}...`); } catch {}
-    result = await callGeminiApiSingle(apiKey, fallbackModel, logText, context);
+  const primaryModel = model || 'gemini-2.5-flash';
+  const fallbackCandidates = [
+    primaryModel,
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-2.5-pro',
+    'gemini-1.5-pro'
+  ].filter((m, idx, self) => m && self.indexOf(m) === idx);
+
+  let lastResult = null;
+  for (const targetModel of fallbackCandidates) {
+    try { console.error(`[Gemini LLM] Querying model ${targetModel}...`); } catch {}
+    const result = await callGeminiApiSingle(apiKey, targetModel, logText, context);
+    if (result && !result.error) {
+      return result;
+    }
+    lastResult = result;
+    if (result && result.error) {
+      try { console.error(`[Gemini LLM] Model ${targetModel} error (${result.error.split('\n')[0]}). Trying next candidate...`); } catch {}
+    }
   }
-  return result;
+  return lastResult;
 }
 
 function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
