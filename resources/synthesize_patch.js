@@ -249,7 +249,7 @@ GUIDANCE:
 - If providing "lineEdits", specify exact startLine and endLine based on the numbered lines provided in file context.
 - If providing "replacementCode", it MUST be 100% complete source code without omitting any existing functions, components, variables, imports, or JSX elements. Never drop existing headers or state variables.
 - For constant reassignment errors (e.g. no-const-assign), change 'const' to 'let' on the variable declaration line.
-- For JSX/HTML syntax or parsing errors (e.g. "Expected ')' but found end of file" or "Unclosed JSX element"), inspect the entire component return statement. Match every opening <div>, <section>, and <span> tag to ensure its closing tag is placed in the correct hierarchy position before the return statement ends.
+- For JSX syntax/parse errors (e.g. "Expected ')' but found end of file" or "Unexpected end of file before a closing div tag"), count all opening <div ...> tags vs closing </div> tags in the component return block. Insert the missing closing </div> tag directly above the closing ');' of the return statement.
 - Ensure the resulting patch produces clean code with ZERO lint/compiler errors.
 
 Return ONLY raw JSON matching this exact schema:
@@ -703,6 +703,10 @@ async function main() {
     targetFile: finalDiagnosis?.target || null,
     cwd
   }));
+
+  if (!autoHealed) {
+    process.exitCode = 1;
+  }
 }
 
 main();
