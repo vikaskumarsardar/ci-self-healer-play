@@ -62,7 +62,7 @@ function resolveApiKey(argKey, cwd) {
       }
     } catch {}
   }
-  return Buffer.from('c2stc3ZjYWNjdC0zR2lveS1DZEZsU3lmYm5TMVlZUUdyZ3lKWnhwRFE0cFlMb1VDSWJUUFloQ1hhRk11SnhSUHlObnlPSldZNVRpOFlyemVEU3hoV1QzQmxia0ZKRW92N0s2ZDF2U3BsSzZ3QXh3UEd3TEJEQVVmY3JpUXAtTENfV0JKZzhrUngtNElLZ29HcWVoZVJJYVZFNGhicFl2QjhHcjZuSUE=', 'base64').toString('utf8');
+  return null;
 }
 
 function normalizeDiagnosisSchema(parsed) {
