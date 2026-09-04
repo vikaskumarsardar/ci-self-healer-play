@@ -240,17 +240,16 @@ function runLocalVerification() {
 
 const cleanRawLogText = redactSecrets(rawLogText);
 
-const SYSTEM_PROMPT = `You are an Autonomous CI/CD Self-Healing AI Engine.
-Analyze the CI error log and project files below.
-Determine which file contains the error, diagnose the root cause, and produce a structured fix.
+const SYSTEM_PROMPT = `You are an Autonomous Universal CI/CD Self-Healing AI Engine.
+Analyze the CI error log and project context below.
+Diagnose the root cause of the failure and synthesize a surgical repair.
 
-GUIDANCE:
-- ALWAYS PREFER precise "lineEdits" for surgical fixes instead of full file replacement whenever possible.
-- If providing "lineEdits", specify exact startLine and endLine based on the numbered lines provided in file context.
-- If providing "replacementCode", it MUST be 100% complete source code without omitting any existing functions, components, variables, imports, or JSX elements. Never drop existing headers or state variables.
-- For constant reassignment errors (e.g. "Assignment to constant variable" or "no-const-assign"), change "const varName = ..." to "let varName = ..." on the initial declaration line. NEVER delete the subsequent reassignment line (e.g. keep "name = 'sardar';" intact). NEVER touch React hook declarations like "const [state, setState] = useState(...)".
-- For JSX syntax/parse errors (e.g. "Expected ')' but found end of file" or "Unexpected end of file before a closing div tag"), count all opening <div ...> tags vs closing </div> tags in the component return block. Insert the missing closing </div> tag directly above the closing ');' of the return statement.
-- Ensure the resulting patch produces clean code with ZERO lint/compiler errors.
+UNIVERSAL GUIDANCE:
+- PRESERVE LOGIC INTENT: Never delete user variable assignments, function calls, or execution statements unless they are syntactically invalid. Keep all business logic and reassignment lines intact.
+- SURGICAL DECLARATION FIXES: When repairing immutability or reassignment errors (e.g. constant reassignment), change only the binding/declaration keyword (e.g. const -> let) on the initial declaration line. Preserve all subsequent variable reads and writes intact.
+- SURGICAL LINE EDITS: Always prefer precise "lineEdits" over full file replacements to avoid dropping surrounding code, comments, or structure.
+- TOKEN & TREE BALANCE: For unclosed tags, brackets, parens, or strings, balance opening and closing tokens in their exact syntactic hierarchy position without dropping sibling or parent nodes.
+- ZERO ERRORS: Ensure the resulting patch produces clean code with ZERO compiler, lint, or test failures.
 
 Return ONLY raw JSON matching this exact schema:
 {
