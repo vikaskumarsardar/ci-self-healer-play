@@ -242,7 +242,13 @@ function parseLlmJson(rawText) {
 
 function callGeminiApiSingle(apiKey, model, logText, context) {
   return new Promise((resolve) => {
-    if (!apiKey) return resolve({ error: 'NO_API_KEY: Gemini API Key missing. Please set export GEMINI_API_KEY="your_key" in your shell or pass api_key="your_key".' });
+    if (!apiKey) {
+      return resolve({ error: 'NO_API_KEY: Gemini API Key missing. Please set export GEMINI_API_KEY="your_key" in your shell or pass api_key="your_key".' });
+    }
+    if (apiKey.startsWith('AQ')) {
+      return resolve({ error: 'INVALID_KEY: Token starting with "AQ." is a Rote Access Token, not a Google Gemini API Key. Google Gemini API keys start with "AIzaSy...". Please pass your Gemini API Key as api_key="AIzaSy..." or set export GEMINI_API_KEY="AIzaSy...".' });
+    }
+
     const targetModel = model || 'gemini-1.5-flash';
     const options = {
       hostname: 'generativelanguage.googleapis.com',
@@ -310,6 +316,9 @@ async function callGeminiApi(apiKey, model, logText, context) {
   if (!apiKey) {
     return { error: 'NO_API_KEY: Gemini API Key missing. Please set export GEMINI_API_KEY="your_key" in your shell or pass api_key="your_key".' };
   }
+  if (apiKey.startsWith('AQ')) {
+    return { error: 'INVALID_KEY: Token starting with "AQ." is a Rote Access Token, not a Google Gemini API Key. Google Gemini API keys start with "AIzaSy...". Please pass your Gemini API Key as api_key="AIzaSy..." or set export GEMINI_API_KEY="AIzaSy...".' };
+  }
 
   const primaryModel = model || 'gemini-1.5-flash';
   const fallbackCandidates = [
@@ -328,7 +337,7 @@ async function callGeminiApi(apiKey, model, logText, context) {
     }
     lastResult = result;
     if (result && result.error) {
-      if (result.error.includes('NO_API_KEY') || result.error.includes('API key not valid') || result.error.includes('INVALID_ARGUMENT') || result.error.includes('HTTP 400') || result.error.includes('HTTP 401') || result.error.includes('HTTP 403')) {
+      if (result.error.includes('NO_API_KEY') || result.error.includes('INVALID_KEY') || result.error.includes('API key not valid') || result.error.includes('INVALID_ARGUMENT') || result.error.includes('HTTP 400') || result.error.includes('HTTP 401') || result.error.includes('HTTP 403')) {
         return result;
       }
       try { console.error(`[Gemini LLM] Model ${targetModel} error (${result.error.split('\n')[0]}). Trying next candidate...`); } catch {}
