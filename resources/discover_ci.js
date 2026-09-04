@@ -11,14 +11,12 @@ function getArgValue(name) {
 function resolveWorkspaceCwd() {
   const rawTargetDir = getArgValue('target_dir');
   let baseDir = process.cwd();
-  if (process.env.INIT_CWD && fs.existsSync(process.env.INIT_CWD)) {
+  if (process.env.GITHUB_WORKSPACE && fs.existsSync(process.env.GITHUB_WORKSPACE)) {
+    baseDir = process.env.GITHUB_WORKSPACE;
+  } else if (process.env.INIT_CWD && fs.existsSync(process.env.INIT_CWD)) {
     baseDir = process.env.INIT_CWD;
   } else if (process.env.PWD && fs.existsSync(process.env.PWD) && !process.env.PWD.includes('.rote/workspaces')) {
     baseDir = process.env.PWD;
-  } else if (baseDir.includes('.rote/workspaces')) {
-    if (process.env.GITHUB_WORKSPACE && fs.existsSync(process.env.GITHUB_WORKSPACE)) {
-      baseDir = process.env.GITHUB_WORKSPACE;
-    }
   }
 
   if (rawTargetDir && rawTargetDir.trim() !== '' && rawTargetDir !== 'undefined' && rawTargetDir !== 'null') {
