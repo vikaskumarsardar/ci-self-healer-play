@@ -9,23 +9,23 @@ function getArgValue(name) {
 
 function resolveWorkspaceCwd() {
   const rawTargetDir = getArgValue('target_dir');
+  if (rawTargetDir && path.isAbsolute(rawTargetDir.trim()) && fs.existsSync(rawTargetDir.trim())) {
+    return path.resolve(rawTargetDir.trim());
+  }
+
   let baseDir = process.cwd();
   if (process.env.GITHUB_WORKSPACE && fs.existsSync(process.env.GITHUB_WORKSPACE)) {
     baseDir = process.env.GITHUB_WORKSPACE;
-  } else if (process.env.INIT_CWD && fs.existsSync(process.env.INIT_CWD)) {
-    baseDir = process.env.INIT_CWD;
   } else if (process.env.PWD && fs.existsSync(process.env.PWD) && !process.env.PWD.includes('.rote/workspaces')) {
     baseDir = process.env.PWD;
+  } else if (process.env.INIT_CWD && fs.existsSync(process.env.INIT_CWD) && !process.env.INIT_CWD.includes('.rote/workspaces')) {
+    baseDir = process.env.INIT_CWD;
   }
 
   if (rawTargetDir && rawTargetDir.trim() !== '' && rawTargetDir !== 'undefined' && rawTargetDir !== 'null') {
     const target = rawTargetDir.trim();
     const abs = path.isAbsolute(target) ? target : path.resolve(baseDir, target);
     if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) return abs;
-  }
-
-  if (process.env.GITHUB_WORKSPACE && fs.existsSync(process.env.GITHUB_WORKSPACE)) {
-    return process.env.GITHUB_WORKSPACE;
   }
 
   return path.resolve(baseDir);
