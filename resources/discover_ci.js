@@ -78,7 +78,7 @@ if (files.includes('package.json')) {
 } else if (files.includes('requirements.txt') || files.includes('pytest.ini') || files.includes('pyproject.toml') || files.includes('setup.py') || files.includes('Pipfile') || files.includes('tox.ini') || files.some(f => f.endsWith('.py'))) {
   language = 'python';
   runner = 'python3';
-  testCommand = 'python3 -m unittest 2>/dev/null || pytest';
+  testCommand = 'python3 -m unittest discover 2>/dev/null || pytest';
 } else if (files.includes('Cargo.toml')) {
   language = 'rust';
   runner = 'cargo';

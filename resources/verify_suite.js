@@ -76,7 +76,7 @@ if (files.includes('package.json')) {
 } else if (files.includes('go.mod') || files.some(f => f.endsWith('.go'))) {
   commandsToRun.push('go test ./...');
 } else if (files.includes('requirements.txt') || files.includes('pytest.ini') || files.includes('pyproject.toml') || files.includes('setup.py') || files.includes('Pipfile') || files.includes('tox.ini') || files.some(f => f.endsWith('.py'))) {
-  commandsToRun.push('python3 -m unittest 2>/dev/null || pytest');
+  commandsToRun.push('python3 -m unittest discover 2>/dev/null || pytest');
 } else if (files.includes('Cargo.toml')) {
   commandsToRun.push('cargo test');
 } else if (files.includes('Gemfile') || files.includes('Rakefile') || files.some(f => f.endsWith('.rb'))) {
