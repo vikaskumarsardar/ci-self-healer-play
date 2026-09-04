@@ -10,8 +10,10 @@ function getArgValue(name) {
 
 function resolveWorkspaceCwd() {
   const rawTargetDir = getArgValue('target_dir');
-  if (rawTargetDir && path.isAbsolute(rawTargetDir.trim()) && fs.existsSync(rawTargetDir.trim())) {
-    return path.resolve(rawTargetDir.trim());
+  if (rawTargetDir && rawTargetDir.trim() !== '' && rawTargetDir !== 'undefined' && rawTargetDir !== 'null' && !rawTargetDir.startsWith('$')) {
+    const target = rawTargetDir.trim();
+    const abs = path.isAbsolute(target) ? target : path.resolve(process.cwd(), target);
+    if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) return abs;
   }
 
   let baseDir = process.cwd();
@@ -21,12 +23,6 @@ function resolveWorkspaceCwd() {
     baseDir = process.env.PWD;
   } else if (process.env.INIT_CWD && fs.existsSync(process.env.INIT_CWD) && !process.env.INIT_CWD.includes('.rote/workspaces')) {
     baseDir = process.env.INIT_CWD;
-  }
-
-  if (rawTargetDir && rawTargetDir.trim() !== '' && rawTargetDir !== 'undefined' && rawTargetDir !== 'null') {
-    const target = rawTargetDir.trim();
-    const abs = path.isAbsolute(target) ? target : path.resolve(baseDir, target);
-    if (fs.existsSync(abs) && fs.statSync(abs).isDirectory()) return abs;
   }
 
   return path.resolve(baseDir);
