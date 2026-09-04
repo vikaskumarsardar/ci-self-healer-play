@@ -12,6 +12,13 @@ function executeGitDelivery(cwd, pushStrategy, autoPush, githubToken) {
 
   if (shouldPush) {
     try {
+      try {
+        execSync('git config user.name', { cwd, stdio: 'pipe' });
+      } catch {
+        execSync('git config user.name "Rote-CI-Healer-Bot"', { cwd, stdio: 'pipe' });
+        execSync('git config user.email "ci-healer@modiqo.ai"', { cwd, stdio: 'pipe' });
+      }
+
       execSync('git add -A', { cwd, stdio: 'pipe' });
       
       let hasChanges = false;
@@ -31,7 +38,14 @@ function executeGitDelivery(cwd, pushStrategy, autoPush, githubToken) {
         targetBranch = fixBranch;
       }
 
-      execSync(`git push origin ${targetBranch}`, { cwd, stdio: 'pipe' });
+      const { detectGitRemote } = require('./cloud_ci.cjs');
+      const gitRemote = detectGitRemote(cwd);
+      if (githubToken && gitRemote.provider === 'github' && gitRemote.owner && gitRemote.repo) {
+        const authUrl = `https://x-access-token:${githubToken}@github.com/${gitRemote.owner}/${gitRemote.repo}.git`;
+        execSync(`git push ${authUrl} ${targetBranch}`, { cwd, stdio: 'pipe' });
+      } else {
+        execSync(`git push origin ${targetBranch}`, { cwd, stdio: 'pipe' });
+      }
     } catch (err) {
       pushError = err.message.slice(0, 150);
     }
