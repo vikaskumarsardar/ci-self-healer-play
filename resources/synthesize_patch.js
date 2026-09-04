@@ -242,8 +242,8 @@ function parseLlmJson(rawText) {
 
 function callGeminiApiSingle(apiKey, model, logText, context) {
   return new Promise((resolve) => {
-    if (!apiKey) return resolve(null);
-    const targetModel = model || 'gemini-3.7-flash';
+    if (!apiKey) return resolve({ error: 'NO_API_KEY: Gemini API Key missing. Please set export GEMINI_API_KEY="your_key" in your shell or pass api_key="your_key".' });
+    const targetModel = model || 'gemini-1.5-flash';
     const options = {
       hostname: 'generativelanguage.googleapis.com',
       path: `/v1beta/models/${targetModel}:generateContent?key=${apiKey}`,
@@ -266,7 +266,7 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
               const retrySec = retryMatch ? Math.ceil(parseFloat(retryMatch[1])) : 60;
               msg = `Gemini Rate Limit Exceeded (HTTP 429)\n                       ↳ Free tier limit reached (20 req/min)\n                       ↳ Action: Retry in ${retrySec} seconds`;
             } else if (parsed.error?.message) {
-              msg = `API Error (HTTP ${res.statusCode}): ${parsed.error.message.slice(0, 100)}`;
+              msg = `API Error (HTTP ${res.statusCode}): ${parsed.error.message.slice(0, 120)}`;
             }
           } catch {}
           resolve({ error: msg });
@@ -307,13 +307,16 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
 }
 
 async function callGeminiApi(apiKey, model, logText, context) {
-  const primaryModel = model || 'gemini-2.5-flash';
+  if (!apiKey) {
+    return { error: 'NO_API_KEY: Gemini API Key missing. Please set export GEMINI_API_KEY="your_key" in your shell or pass api_key="your_key".' };
+  }
+
+  const primaryModel = model || 'gemini-1.5-flash';
   const fallbackCandidates = [
     primaryModel,
-    'gemini-2.5-flash',
     'gemini-1.5-flash',
-    'gemini-2.5-pro',
-    'gemini-1.5-pro'
+    'gemini-1.5-pro',
+    'gemini-2.0-flash-exp'
   ].filter((m, idx, self) => m && self.indexOf(m) === idx);
 
   let lastResult = null;
@@ -325,6 +328,9 @@ async function callGeminiApi(apiKey, model, logText, context) {
     }
     lastResult = result;
     if (result && result.error) {
+      if (result.error.includes('NO_API_KEY') || result.error.includes('API key not valid') || result.error.includes('INVALID_ARGUMENT') || result.error.includes('HTTP 400') || result.error.includes('HTTP 401') || result.error.includes('HTTP 403')) {
+        return result;
+      }
       try { console.error(`[Gemini LLM] Model ${targetModel} error (${result.error.split('\n')[0]}). Trying next candidate...`); } catch {}
     }
   }
