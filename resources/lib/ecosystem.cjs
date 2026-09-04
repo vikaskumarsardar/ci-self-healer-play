@@ -61,7 +61,7 @@ function resolveVerificationCommands(cwd) {
     if (commandsToRun.length === 0) {
       const hasTestFile = files.some(f => f.includes('test') || f.includes('spec'));
       if (hasTestFile) {
-        commandsToRun.push('node --test 2>/dev/null || node test.js');
+        commandsToRun.push('node --test 2>/dev/null || node test.cjs');
       } else {
         commandsToRun.push('node -c index.js 2>/dev/null || node -c src/index.js 2>/dev/null || true');
       }

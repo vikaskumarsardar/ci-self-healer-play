@@ -17,7 +17,7 @@
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  *   url: https://github.com/vikaskumarsardar/ci-self-healer-play
  * metadata:
- *   version: 1.3.3
+ *   version: 1.3.4
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
@@ -84,7 +84,7 @@
  *     type: process.exec
  *     argv:
  *     - node
- *     - '@resource{discover_ci.js}'
+ *     - '@resource{discover_ci.cjs}'
  *     - target_dir=$target_dir
  *     - github_token=$github_token
  *     - gitlab_token=$gitlab_token
@@ -94,7 +94,7 @@
  *     - discover_ci
  *     argv:
  *     - node
- *     - '@resource{capture_logs.js}'
+ *     - '@resource{capture_logs.cjs}'
  *     - target_dir=$target_dir
  *     - log_file=$log_file
  *   synthesize_patch:
@@ -104,7 +104,7 @@
  *     - capture_logs
  *     argv:
  *     - node
- *     - '@resource{synthesize_patch.js}'
+ *     - '@resource{synthesize_patch.cjs}'
  *     - target_dir=$target_dir
  *     - log_file=$log_file
  *     - api_key=$api_key
@@ -118,7 +118,7 @@
  *     - synthesize_patch
  *     argv:
  *     - node
- *     - '@resource{verify_suite.js}'
+ *     - '@resource{verify_suite.cjs}'
  *     - target_dir=$target_dir
  *     - auto_push=$auto_push
  *     - push_strategy=$push_strategy
