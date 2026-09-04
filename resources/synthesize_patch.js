@@ -125,7 +125,7 @@ function getStackFocusedContext(logText) {
         const lines = fs.readFileSync(fullP, 'utf8').split('\n');
         const start = Math.max(0, lineNo - 30);
         const end = Math.min(lines.length, lineNo + 30);
-        const snippet = lines.slice(start, end).join('\n');
+        const snippet = lines.slice(start, end).map((l, i) => `${start + i + 1}: ${l}`).join('\n');
         focusedFiles.push(`--- HIGH PRIORITY FAILING FILE: ${relFile} (Lines ${start+1}-${end}) ---\n${snippet}`);
       }
     }
@@ -209,18 +209,17 @@ Analyze the CI error log and project files below.
 Determine which file contains the error, diagnose the root cause, and produce a structured fix.
 
 GUIDANCE:
-- PREFER "lineEdits" for localized bug fixes and line replacements.
-- Ensure lineEdits do NOT overlap with each other and stay strictly within file line bounds.
-- Use "replacementCode" ONLY when an entire file genuinely needs total replacement or new file creation.
-- Never modify unrelated code.
-- Preserve developer intent: when resolving variable redeclarations or naming collisions, prefer renaming the variable (e.g. const appName = ...) or adjusting scope/types over deleting lines, unless the line is an obvious accidental duplicate.
+- For code refactoring or ESLint fixes, provide "replacementCode" containing the complete repaired source code for the target file, or exact "lineEdits".
+- When providing replacementCode, preserve all original component structure, outer JSX container tags, imports, and exports 100% intact so the file compiles cleanly.
+- For constant reassignment errors (e.g. no-const-assign), change 'const' to 'let' on the variable declaration line (e.g. change "const name = ..." to "let name = ...").
+- Ensure the resulting patch produces clean code with ZERO lint/compiler errors.
 
 Return ONLY raw JSON matching this exact schema:
 {
   "action": "INSTALL_DEPENDENCY" | "REFACTOR_CODE" | "SYNC_ENV_KEY" | "FIX_CONFIG",
   "target": "relative/file/path/or/package_name",
   "lineEdits": [{ "startLine": number, "endLine": number, "replacement": "string" }],
-  "replacementCode": "Complete repaired source code or new file content if lineEdits is null",
+  "replacementCode": "Complete repaired source code for the target file",
   "envKey": "Key name if action is SYNC_ENV_KEY, otherwise null",
   "explanation": "Brief description of the diagnosis and fix"
 }`;
@@ -445,8 +444,11 @@ async function main() {
       : `${cleanRawLogText}\n\n--- PREVIOUS ATTEMPT ${attempt - 1} PATCH FAILED WITH COMPILER/TEST ERROR ---\n${redactSecrets(previousErrorLog)}`;
 
     const focusedContext = redactSecrets(getStackFocusedContext(currentLogText));
-    const projectFiles = getProjectFiles(cwd);
-    const filesContext = focusedContext + '\n\n' + projectFiles.map(f => `--- FILE: ${f.path} ---\n${redactSecrets(f.content.slice(0, 2500))}`).join('\n\n');
+    const projectFiles = getProjectFiles(cwd).filter(f => !focusedContext.includes(`--- HIGH PRIORITY FAILING FILE: ${f.path}`));
+    const filesContext = (focusedContext ? focusedContext + '\n\n' : '') + projectFiles.map(f => {
+      const numberedContent = f.content.slice(0, 3000).split('\n').map((l, i) => `${i + 1}: ${l}`).join('\n');
+      return `--- FILE: ${f.path} ---\n${redactSecrets(numberedContent)}`;
+    }).join('\n\n');
 
     let aiDiagnosis = null;
     if (apiKey && cleanRawLogText) {
@@ -455,6 +457,7 @@ async function main() {
       } else {
         aiDiagnosis = await callOpenAiApi(apiKey, model, currentLogText, filesContext, baseUrlArg);
       }
+      try { console.error('[aiDiagnosis DEBUG]:', JSON.stringify(aiDiagnosis)); } catch {}
     }
 
     if (!aiDiagnosis || aiDiagnosis.error) {
@@ -529,7 +532,10 @@ async function main() {
         const fileToPatch = path.resolve(cwd, fileTarget);
 
         if (fs.existsSync(fileToPatch)) {
-          if (Array.isArray(aiDiagnosis.lineEdits) && aiDiagnosis.lineEdits.length > 0 && aiDiagnosis.lineEdits.length <= 20) {
+          if (aiDiagnosis.replacementCode && typeof aiDiagnosis.replacementCode === 'string' && aiDiagnosis.replacementCode.trim().length > 10) {
+            fs.writeFileSync(fileToPatch, aiDiagnosis.replacementCode.trim());
+            patchApplied = true;
+          } else if (Array.isArray(aiDiagnosis.lineEdits) && aiDiagnosis.lineEdits.length > 0 && aiDiagnosis.lineEdits.length <= 20) {
             let lines = fs.readFileSync(fileToPatch, 'utf8').split('\n');
             const invalidEdits = aiDiagnosis.lineEdits.some(e => 
               !Number.isInteger(e.startLine) || 
@@ -545,7 +551,13 @@ async function main() {
               errorReason = `Line edit type mismatch or out of bounds for target file (length: ${lines.length})`;
               break;
             } else {
-              const sortedEdits = [...aiDiagnosis.lineEdits].sort((a, b) => b.startLine - a.startLine);
+              const uniqueEditsMap = new Map();
+              for (const edit of aiDiagnosis.lineEdits) {
+                const key = `${edit.startLine}:${edit.endLine}`;
+                uniqueEditsMap.set(key, edit);
+              }
+              const deduplicatedEdits = Array.from(uniqueEditsMap.values());
+              const sortedEdits = deduplicatedEdits.sort((a, b) => b.startLine - a.startLine);
               let hasOverlap = false;
               let lastStart = Infinity;
               
@@ -570,9 +582,6 @@ async function main() {
                 patchApplied = true;
               }
             }
-          } else if (aiDiagnosis.replacementCode) {
-            fs.writeFileSync(fileToPatch, aiDiagnosis.replacementCode);
-            patchApplied = true;
           } else {
             errorReason = `No valid lineEdits or replacementCode provided for target file: ${fileTarget}`;
             break;
