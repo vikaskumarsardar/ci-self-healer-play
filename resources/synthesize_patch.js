@@ -54,15 +54,11 @@ const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.
 const provider = providerArg || process.env.LLM_PROVIDER || (apiKey && (apiKey.startsWith('AQ') || apiKey.startsWith('AIza')) ? 'gemini' : 'openai');
 const isGemini = provider === 'gemini';
 
-let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-3.5-flash' : 'gpt-4o-mini');
+let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-3.7-flash' : 'gpt-4o-mini');
 
 try {
   console.error(`[synthesize_patch DEBUG] cwd=${cwd}, hasApiKey=${Boolean(apiKey)}, apiKeyLength=${apiKey ? apiKey.length : 0}, provider=${provider}, model=${model}`);
 } catch {}
-
-if (isGemini && (model === 'gemini-1.5-flash' || model === 'gemini-1.5-pro' || model === 'gemini-pro' || model === 'gemini-2.0-flash')) {
-  model = 'gemini-3.5-flash';
-}
 
 let rawLogText = '';
 if (logFilePath && fs.existsSync(logFilePath)) {
@@ -275,10 +271,13 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
         try {
           const parsed = JSON.parse(body);
           const parts = parsed.candidates?.[0]?.content?.parts || [];
+          const fullText = parts.map(p => p.text || '').join('\n');
+          const resJson = parseLlmJson(fullText);
+          if (resJson) return resolve(resJson);
           for (const p of parts) {
             if (p.text) {
-              const resJson = parseLlmJson(p.text);
-              if (resJson) return resolve(resJson);
+              const r = parseLlmJson(p.text);
+              if (r) return resolve(r);
             }
           }
           resolve(null);
