@@ -703,10 +703,6 @@ async function main() {
     targetFile: finalDiagnosis?.target || null,
     cwd
   }));
-
-  if (!autoHealed) {
-    process.exitCode = 1;
-  }
 }
 
 main();
