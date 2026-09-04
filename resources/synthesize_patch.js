@@ -192,20 +192,23 @@ async function main() {
   }
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+  const isError = (errorReason || !autoHealed);
   process.stdout.write(JSON.stringify({
-    status: (errorReason || !autoHealed) ? 'REJECTED' : 'DIAGNOSED',
+    status: isError ? 'REJECTED' : 'DIAGNOSED',
     engine: finalDiagnosis ? (isGemini ? 'GEMINI_CLOUD_LLM' : (baseUrlArg ? 'CUSTOM_OPENAI_COMPATIBLE_LLM' : 'OPENAI_CLOUD_LLM')) : 'NO_LLM_DIAGNOSIS',
     model,
     aiDiagnosis: finalDiagnosis,
     autoHealed,
     requiresSecret,
     healedActionDetails,
-    errorReason,
+    errorReason: errorReason || (apiKey ? 'LLM diagnosis unavailable' : 'No LLM API key configured. Please set OPENAI_API_KEY or GEMINI_API_KEY environment variable, or pass api_key=...'),
     durationSec,
     attemptsExecuted: attemptsCount,
     targetFile: finalDiagnosis?.target || null,
     cwd
   }));
+
+  if (isError) process.exit(1);
 }
 
 main();
