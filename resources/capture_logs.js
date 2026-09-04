@@ -30,7 +30,7 @@ function resolveWorkspaceCwd() {
 const cwd = resolveWorkspaceCwd();
 
 const rawLogFile = getArgValue('log_file');
-const logFilePath = (rawLogFile && rawLogFile.trim() !== '' && rawLogFile !== 'undefined') ? path.resolve(rawLogFile.trim()) : null;
+const logFilePath = (rawLogFile && !rawLogFile.startsWith('$') && rawLogFile.trim() !== '' && rawLogFile !== 'undefined' && rawLogFile !== 'null') ? path.resolve(rawLogFile.trim()) : null;
 
 let rawLogText = '';
 
