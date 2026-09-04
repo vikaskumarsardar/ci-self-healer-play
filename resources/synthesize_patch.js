@@ -88,7 +88,11 @@ const rawModel = getArgValue('model');
 const modelArg = (rawModel && !rawModel.startsWith('$') && rawModel.trim() !== '' && rawModel !== 'undefined' && rawModel !== 'null') ? rawModel.trim() : null;
 
 const rawBaseUrl = getArgValue('base_url');
-const baseUrlArg = (rawBaseUrl && !rawBaseUrl.startsWith('$') && rawBaseUrl.trim() !== '' && rawBaseUrl !== 'undefined' && rawBaseUrl !== 'null') ? rawBaseUrl.trim() : null;
+let baseUrlArg = (rawBaseUrl && !rawBaseUrl.startsWith('$') && rawBaseUrl.trim() !== '' && rawBaseUrl !== 'undefined' && rawBaseUrl !== 'null') ? rawBaseUrl.trim() : null;
+
+if (baseUrlArg && (baseUrlArg.includes('11434') || baseUrlArg.includes('localhost') || baseUrlArg.includes('127.0.0.1')) && apiKey && (apiKey.startsWith('sk-') || apiKey.startsWith('AIza'))) {
+  baseUrlArg = null;
+}
 
 const rawProvider = getArgValue('provider');
 const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim().toLowerCase() : null;
@@ -412,20 +416,22 @@ function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
     let hostname = 'api.openai.com';
     let pathName = '/v1/chat/completions';
     let isHttps = true;
+    let port = 443;
 
     if (customBaseUrl) {
       try {
         const parsedUrl = new URL(customBaseUrl);
         hostname = parsedUrl.hostname;
-        pathName = parsedUrl.pathname.endsWith('/chat/completions') ? parsedUrl.pathname : pathName;
+        pathName = parsedUrl.pathname.endsWith('/chat/completions') ? parsedUrl.pathname : (parsedUrl.pathname.endsWith('/') ? parsedUrl.pathname + 'chat/completions' : parsedUrl.pathname + '/chat/completions');
         isHttps = parsedUrl.protocol === 'https:';
+        port = parsedUrl.port ? parseInt(parsedUrl.port, 10) : (isHttps ? 443 : 80);
       } catch { /* Fallback */ }
     }
 
     const headers = { 'Content-Type': 'application/json' };
     if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
-    const options = { hostname, path: pathName, method: 'POST', headers };
+    const options = { hostname, port, path: pathName, method: 'POST', headers };
     const userContent = `CI Error Log:\n${logText.slice(0, 4000)}\n\nProject Context:\n${context.slice(0, 9000)}`;
     const payload = JSON.stringify({
       model,
