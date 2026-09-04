@@ -4,3 +4,4 @@ schema_version = 1
 id = "node"
 command = "node"
 required = true
+install_hints = ["apt install nodejs", "brew install node"]
