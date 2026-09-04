@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace');
-const { resolveVerificationCommands } = require('./lib/ecosystem');
+const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace.cjs');
+const { resolveVerificationCommands } = require('./lib/ecosystem.cjs');
 
 const cwd = resolveWorkspaceCwd();
 const rawLogFile = getArgValue('log_file');

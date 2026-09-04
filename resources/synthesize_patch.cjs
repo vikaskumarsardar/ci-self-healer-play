@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace');
-const { resolveVerificationCommands } = require('./lib/ecosystem');
-const { resolveApiKey, callGeminiApi, callOpenAiApi } = require('./lib/llm_client');
-const { isSafePath, PatchManager } = require('./lib/patch_applier');
+const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace.cjs');
+const { resolveVerificationCommands } = require('./lib/ecosystem.cjs');
+const { resolveApiKey, callGeminiApi, callOpenAiApi } = require('./lib/llm_client.cjs');
+const { isSafePath, PatchManager } = require('./lib/patch_applier.cjs');
 
 const cwd = resolveWorkspaceCwd();
 

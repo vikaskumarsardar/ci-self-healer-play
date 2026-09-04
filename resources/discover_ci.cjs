@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace');
-const { detectEcosystem } = require('./lib/ecosystem');
-const { detectGitRemote, fetchCloudCiData } = require('./lib/cloud_ci');
+const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace.cjs');
+const { detectEcosystem } = require('./lib/ecosystem.cjs');
+const { detectGitRemote, fetchCloudCiData } = require('./lib/cloud_ci.cjs');
 
 const cwd = resolveWorkspaceCwd();
 const githubToken = getArgValue('github_token') || process.env.GITHUB_TOKEN;

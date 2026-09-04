@@ -1,7 +1,7 @@
 const { execSync } = require('child_process');
-const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace');
-const { resolveVerificationCommands } = require('./lib/ecosystem');
-const { executeGitDelivery } = require('./lib/git_delivery');
+const { getArgValue, resolveWorkspaceCwd } = require('./lib/workspace.cjs');
+const { resolveVerificationCommands } = require('./lib/ecosystem.cjs');
+const { executeGitDelivery } = require('./lib/git_delivery.cjs');
 
 const cwd = resolveWorkspaceCwd();
 

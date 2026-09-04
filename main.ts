@@ -17,7 +17,7 @@
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  *   url: https://github.com/vikaskumarsardar/ci-self-healer-play
  * metadata:
- *   version: 1.3.4
+ *   version: 1.3.5
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
