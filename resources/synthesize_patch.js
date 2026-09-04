@@ -249,6 +249,7 @@ GUIDANCE:
 - If providing "lineEdits", specify exact startLine and endLine based on the numbered lines provided in file context.
 - If providing "replacementCode", it MUST be 100% complete source code without omitting any existing functions, components, variables, imports, or JSX elements. Never drop existing headers or state variables.
 - For constant reassignment errors (e.g. no-const-assign), change 'const' to 'let' on the variable declaration line.
+- For JSX/HTML syntax or parsing errors (e.g. "Expected ')' but found end of file" or "Unclosed JSX element"), inspect the entire component return statement. Match every opening <div>, <section>, and <span> tag to ensure its closing tag is placed in the correct hierarchy position before the return statement ends.
 - Ensure the resulting patch produces clean code with ZERO lint/compiler errors.
 
 Return ONLY raw JSON matching this exact schema:
@@ -471,6 +472,22 @@ async function main() {
   let attemptsCount = 0;
   let previousErrorLog = '';
 
+  const fileBackups = new Map();
+  function backupFile(filePath) {
+    if (!fileBackups.has(filePath)) {
+      fileBackups.set(filePath, fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : null);
+    }
+  }
+  function revertBackups() {
+    for (const [filePath, content] of fileBackups.entries()) {
+      if (content === null) {
+        if (fs.existsSync(filePath)) { try { fs.unlinkSync(filePath); } catch {} }
+      } else {
+        try { fs.writeFileSync(filePath, content); } catch {}
+      }
+    }
+  }
+
   const validActions = ['INSTALL_DEPENDENCY', 'REFACTOR_CODE', 'SYNC_ENV_KEY', 'FIX_CONFIG'];
   const maxAttempts = 3;
 
@@ -571,6 +588,7 @@ async function main() {
       const fileTarget = aiDiagnosis.target.trim();
       if (isSafePath(fileTarget)) {
         const fileToPatch = path.resolve(cwd, fileTarget);
+        backupFile(fileToPatch);
 
         if (fs.existsSync(fileToPatch)) {
           if (Array.isArray(aiDiagnosis.lineEdits) && aiDiagnosis.lineEdits.length > 0 && aiDiagnosis.lineEdits.length <= 20) {
@@ -658,6 +676,7 @@ async function main() {
         break; // Verification passed!
       } else {
         previousErrorLog = verifyCheck.errorLog;
+        revertBackups(); // Cleanly revert unverified patch before next attempt
         if (attempt === maxAttempts) {
           errorReason = `Self-healing retry limit reached (${maxAttempts} attempts executed without full verification)`;
         }
@@ -665,9 +684,13 @@ async function main() {
     }
   }
 
+  if (!autoHealed) {
+    revertBackups(); // Ensure original state is preserved if auto-healing failed
+  }
+
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
   process.stdout.write(JSON.stringify({
-    status: errorReason ? 'REJECTED' : 'DIAGNOSED',
+    status: (errorReason || !autoHealed) ? 'REJECTED' : 'DIAGNOSED',
     engine: finalDiagnosis ? (isGemini ? 'GEMINI_CLOUD_LLM' : (baseUrlArg ? 'CUSTOM_OPENAI_COMPATIBLE_LLM' : 'OPENAI_CLOUD_LLM')) : 'NO_LLM_DIAGNOSIS',
     model,
     aiDiagnosis: finalDiagnosis,
