@@ -52,7 +52,13 @@ const files = fs.existsSync(resolvedCwd) ? fs.readdirSync(resolvedCwd) : [];
     try {
       const pkgJson = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'));
       if (pkgJson.scripts?.build) buildCmd = 'npm run build';
-      if (pkgJson.scripts?.test) testCmd = 'npm test';
+      if (pkgJson.scripts?.test && !pkgJson.scripts.test.includes('no test specified')) {
+        testCmd = 'npm test';
+      } else if (pkgJson.scripts?.lint) {
+        testCmd = 'npm run lint';
+      } else {
+        testCmd = 'node --test 2>/dev/null || node test.js';
+      }
     } catch {
       testCmd = 'npm test';
     }

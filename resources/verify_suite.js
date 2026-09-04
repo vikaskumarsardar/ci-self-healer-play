@@ -57,9 +57,21 @@ if (files.includes('package.json')) {
     if (pkgJson.scripts?.lint) commandsToRun.push('npm run lint');
     if (pkgJson.scripts?.typecheck) commandsToRun.push('npm run typecheck');
     if (pkgJson.scripts?.build) commandsToRun.push('npm run build');
-    if (pkgJson.scripts?.test) commandsToRun.push('npm test');
+    if (pkgJson.scripts?.test && !pkgJson.scripts.test.includes('no test specified')) {
+      commandsToRun.push('npm test');
+    }
   } catch {
     commandsToRun.push('npm test');
+  }
+
+  if (commandsToRun.length === 0) {
+    const localFiles = fs.existsSync(cwd) ? fs.readdirSync(cwd) : [];
+    const hasTestFile = localFiles.some(f => f.includes('test') || f.includes('spec'));
+    if (hasTestFile) {
+      commandsToRun.push('node --test 2>/dev/null || node test.js');
+    } else {
+      commandsToRun.push('node -c index.js 2>/dev/null || node -c src/index.js 2>/dev/null || true');
+    }
   }
 } else if (files.includes('go.mod') || files.some(f => f.endsWith('.go'))) {
   commandsToRun.push('go test ./...');
