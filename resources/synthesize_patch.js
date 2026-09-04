@@ -225,26 +225,47 @@ Return ONLY raw JSON matching this exact schema:
   "explanation": "Brief description of the diagnosis and fix"
 }`;
 
+function normalizeDiagnosisSchema(parsed) {
+  if (!parsed || typeof parsed !== 'object') return null;
+  if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
+    const act = parsed.actions[0];
+    return {
+      action: act.action || act.type || 'REFACTOR_CODE',
+      target: act.target || act.filePath || act.file || parsed.target,
+      lineEdits: (act.lineEdits || act.edits || []).map(e => ({
+        startLine: Number(e.startLine),
+        endLine: Number(e.endLine),
+        replacement: e.replacement
+      })),
+      replacementCode: act.replacementCode || act.code || parsed.replacementCode || null,
+      envKey: act.envKey || parsed.envKey || null,
+      explanation: parsed.explanation || act.explanation || 'Self-healing patch synthesized'
+    };
+  }
+  return parsed;
+}
+
 // Robust JSON parser for LLM markdown outputs
 function parseLlmJson(rawText) {
   if (!rawText) return null;
   let cleaned = rawText.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+  let parsed = null;
   try {
-    return JSON.parse(cleaned);
+    parsed = JSON.parse(cleaned);
   } catch {
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
-        return JSON.parse(jsonMatch[0]);
+        parsed = JSON.parse(jsonMatch[0]);
       } catch {
         try {
-          const sanitized = jsonMatch[0].replace(/([^\\])\r?\n/g, '$1\\n');
-          return JSON.parse(sanitized);
-        } catch { return null; }
+          const sanitized = jsonMatch[0].replace(/,\s*([\}\]])/g, '$1');
+          parsed = JSON.parse(sanitized);
+        } catch { parsed = null; }
       }
     }
-    return null;
   }
+  return normalizeDiagnosisSchema(parsed);
 }
 
 function callGeminiApiSingle(apiKey, model, logText, context) {
