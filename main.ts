@@ -11,13 +11,13 @@
  * @rote-frontmatter
  * ---
  * name: ci-self-healer
- * description: Autonomous Universal Cloud LLM CI/CD Failure Diagnoser & Self-Healing Repair Play for Node.js, Go, Python, Rust, and Make
+ * description: Autonomous universal CI/CD failure diagnoser and self-healing repair engine. Scans host runner environments across Node.js (React & Express), Python (unittest & pytest), Go (go test), Ruby (minitest & Rails), Cargo, and Make. Captures stack traces, parses error context, and synthesizes line-level code patches using Cloud LLMs (Gemini 3.7 Flash, OpenAI, Ollama). Executes deterministic multi-stage verification (lint, build, test), displays Recovery SLA timing metrics, and supports direct, branch, PR, or dry-run delivery strategies. Integrated natively with keyless MCP and AI IDE Agent Skills.
  * provenance_url: https://github.com/vikaskumarsardar/ci-self-healer-play
  * provenance:
  *   author: swapankumar <swapankumarsardar73727@gmail.com>
  *   url: https://github.com/vikaskumarsardar/ci-self-healer-play
  * metadata:
- *   version: 1.2.28
+ *   version: 1.2.29
  *   status: released
  *   kind: atomic
  *   flow_type: sequential
