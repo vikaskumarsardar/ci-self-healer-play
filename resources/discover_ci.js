@@ -38,15 +38,7 @@ const gitlabToken = rawGitlabToken || process.env.GITLAB_TOKEN;
 
 function resolveProjectRoot(dir) {
   const target = path.resolve(dir || '.');
-  const manifests = ['package.json', 'go.mod', 'requirements.txt', 'pytest.ini', 'pyproject.toml', 'Cargo.toml', 'Gemfile', 'Rakefile'];
-  if (fs.existsSync(target)) {
-    const files = fs.readdirSync(target);
-    if (manifests.some(m => files.includes(m))) return target;
-  }
-  if (fs.existsSync(process.cwd())) {
-    const procFiles = fs.readdirSync(process.cwd());
-    if (manifests.some(m => procFiles.includes(m))) return process.cwd();
-  }
+  if (fs.existsSync(target) && fs.statSync(target).isDirectory()) return target;
   return target;
 }
 
