@@ -42,7 +42,7 @@ const pushStrategyArg = (rawPushStrategy && !rawPushStrategy.startsWith('$') && 
 // Strategies: direct (push to current branch), branch (create fix/ci-healer-XXXX branch), pr (branch + open PR), none
 let pushStrategy = pushStrategyArg || process.env.PUSH_STRATEGY || (autoPush ? 'direct' : 'none');
 if (pushStrategy !== 'direct' && pushStrategy !== 'branch' && pushStrategy !== 'pr' && pushStrategy !== 'none') {
-  pushStrategy = 'direct';
+  pushStrategy = 'none';
 }
 
 function resolveProjectRoot(dir) {
