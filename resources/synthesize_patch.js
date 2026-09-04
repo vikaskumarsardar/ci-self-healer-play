@@ -248,7 +248,7 @@ GUIDANCE:
 - ALWAYS PREFER precise "lineEdits" for surgical fixes instead of full file replacement whenever possible.
 - If providing "lineEdits", specify exact startLine and endLine based on the numbered lines provided in file context.
 - If providing "replacementCode", it MUST be 100% complete source code without omitting any existing functions, components, variables, imports, or JSX elements. Never drop existing headers or state variables.
-- For constant reassignment errors (e.g. no-const-assign), change 'const' to 'let' ONLY on the specific variable being reassigned (e.g. "const name = 'abc'"). NEVER touch React hook or destructuring declarations like "const [state, setState] = useState(...)".
+- For constant reassignment errors (e.g. "Assignment to constant variable" or "no-const-assign"), change "const varName = ..." to "let varName = ..." on the initial declaration line. NEVER delete the subsequent reassignment line (e.g. keep "name = 'sardar';" intact). NEVER touch React hook declarations like "const [state, setState] = useState(...)".
 - For JSX syntax/parse errors (e.g. "Expected ')' but found end of file" or "Unexpected end of file before a closing div tag"), count all opening <div ...> tags vs closing </div> tags in the component return block. Insert the missing closing </div> tag directly above the closing ');' of the return statement.
 - Ensure the resulting patch produces clean code with ZERO lint/compiler errors.
 
