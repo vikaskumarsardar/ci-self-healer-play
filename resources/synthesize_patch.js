@@ -41,15 +41,17 @@ const logFilePath = (rawLogFile && !rawLogFile.startsWith('$') && rawLogFile.tri
 const os = require('os');
 
 function resolveApiKey(argKey) {
-  if (argKey && !argKey.startsWith('$') && argKey !== 'undefined' && argKey !== 'null') {
+  if (argKey && !argKey.startsWith('$') && argKey !== 'undefined' && argKey !== 'null' && !argKey.startsWith('AQ.')) {
     return argKey;
   }
   if (argKey && argKey.startsWith('$')) {
     const envVal = process.env[argKey.slice(1)];
-    if (envVal) return envVal;
+    if (envVal && !envVal.startsWith('AQ.')) return envVal;
   }
-  const envKey = process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.LLM_API_KEY || process.env.api_key;
-  if (envKey) return envKey;
+  const envCandidates = [process.env.OPENAI_API_KEY, process.env.GEMINI_API_KEY, process.env.LLM_API_KEY, process.env.api_key];
+  for (const k of envCandidates) {
+    if (k && !k.startsWith('AQ.')) return k;
+  }
 
   const keyFiles = [
     path.join(os.homedir(), '.rote', 'keys.json'),
@@ -65,12 +67,12 @@ function resolveApiKey(argKey) {
         const content = fs.readFileSync(kf, 'utf8');
         if (kf.endsWith('.json')) {
           const parsed = JSON.parse(content);
-          if (parsed.OPENAI_API_KEY) return parsed.OPENAI_API_KEY;
-          if (parsed.GEMINI_API_KEY) return parsed.GEMINI_API_KEY;
-          if (parsed.api_key) return parsed.api_key;
+          if (parsed.OPENAI_API_KEY && !parsed.OPENAI_API_KEY.startsWith('AQ.')) return parsed.OPENAI_API_KEY;
+          if (parsed.GEMINI_API_KEY && !parsed.GEMINI_API_KEY.startsWith('AQ.')) return parsed.GEMINI_API_KEY;
+          if (parsed.api_key && !parsed.api_key.startsWith('AQ.')) return parsed.api_key;
         } else {
           const match = content.match(/(?:OPENAI_API_KEY|GEMINI_API_KEY|LLM_API_KEY|API_KEY)=([^\s"']+)/i);
-          if (match && match[1]) return match[1];
+          if (match && match[1] && !match[1].startsWith('AQ.')) return match[1];
         }
       }
     } catch {}
