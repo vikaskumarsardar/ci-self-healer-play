@@ -245,9 +245,10 @@ Analyze the CI error log and project files below.
 Determine which file contains the error, diagnose the root cause, and produce a structured fix.
 
 GUIDANCE:
-- For code refactoring or ESLint fixes, provide "replacementCode" containing the complete repaired source code for the target file, or exact "lineEdits".
-- When providing replacementCode, preserve all original component structure, outer JSX container tags, imports, and exports 100% intact so the file compiles cleanly.
-- For constant reassignment errors (e.g. no-const-assign), change 'const' to 'let' on the variable declaration line (e.g. change "const name = ..." to "let name = ...").
+- ALWAYS PREFER precise "lineEdits" for surgical fixes instead of full file replacement whenever possible.
+- If providing "lineEdits", specify exact startLine and endLine based on the numbered lines provided in file context.
+- If providing "replacementCode", it MUST be 100% complete source code without omitting any existing functions, components, variables, imports, or JSX elements. Never drop existing headers or state variables.
+- For constant reassignment errors (e.g. no-const-assign), change 'const' to 'let' on the variable declaration line.
 - Ensure the resulting patch produces clean code with ZERO lint/compiler errors.
 
 Return ONLY raw JSON matching this exact schema:
@@ -572,10 +573,7 @@ async function main() {
         const fileToPatch = path.resolve(cwd, fileTarget);
 
         if (fs.existsSync(fileToPatch)) {
-          if (aiDiagnosis.replacementCode && typeof aiDiagnosis.replacementCode === 'string' && aiDiagnosis.replacementCode.trim().length > 10) {
-            fs.writeFileSync(fileToPatch, aiDiagnosis.replacementCode.trim());
-            patchApplied = true;
-          } else if (Array.isArray(aiDiagnosis.lineEdits) && aiDiagnosis.lineEdits.length > 0 && aiDiagnosis.lineEdits.length <= 20) {
+          if (Array.isArray(aiDiagnosis.lineEdits) && aiDiagnosis.lineEdits.length > 0 && aiDiagnosis.lineEdits.length <= 20) {
             let lines = fs.readFileSync(fileToPatch, 'utf8').split('\n');
             const invalidEdits = aiDiagnosis.lineEdits.some(e => 
               !Number.isInteger(e.startLine) || 
@@ -587,10 +585,7 @@ async function main() {
               e.endLine < e.startLine
             );
 
-            if (invalidEdits) {
-              errorReason = `Line edit type mismatch or out of bounds for target file (length: ${lines.length})`;
-              break;
-            } else {
+            if (!invalidEdits) {
               const uniqueEditsMap = new Map();
               for (const edit of aiDiagnosis.lineEdits) {
                 const key = `${edit.startLine}:${edit.endLine}`;
@@ -609,10 +604,7 @@ async function main() {
                 lastStart = edit.startLine;
               }
 
-              if (hasOverlap) {
-                errorReason = `Overlapping line edits detected; patch rejected for safety`;
-                break;
-              } else {
+              if (!hasOverlap) {
                 for (const edit of sortedEdits) {
                   const start = Math.max(0, edit.startLine - 1);
                   const end = Math.min(lines.length, edit.endLine);
@@ -622,7 +614,14 @@ async function main() {
                 patchApplied = true;
               }
             }
-          } else {
+          }
+
+          if (!patchApplied && aiDiagnosis.replacementCode && typeof aiDiagnosis.replacementCode === 'string' && aiDiagnosis.replacementCode.trim().length > 10) {
+            fs.writeFileSync(fileToPatch, aiDiagnosis.replacementCode.trim());
+            patchApplied = true;
+          }
+
+          if (!patchApplied && (!aiDiagnosis.lineEdits || aiDiagnosis.lineEdits.length === 0)) {
             errorReason = `No valid lineEdits or replacementCode provided for target file: ${fileTarget}`;
             break;
           }
