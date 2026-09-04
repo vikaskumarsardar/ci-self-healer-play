@@ -36,7 +36,7 @@ function resolveWorkspaceCwd() {
 const cwd = resolveWorkspaceCwd();
 
 const rawLogFile = getArgValue('log_file');
-const logFilePath = (rawLogFile && rawLogFile.trim() !== '' && rawLogFile !== 'undefined') ? path.resolve(rawLogFile.trim()) : null;
+const logFilePath = (rawLogFile && !rawLogFile.startsWith('$') && rawLogFile.trim() !== '' && rawLogFile !== 'undefined') ? path.resolve(rawLogFile.trim()) : null;
 
 const rawApiKey = getArgValue('api_key');
 let apiKeyArg = (rawApiKey && rawApiKey.trim() !== '' && rawApiKey !== 'undefined' && rawApiKey !== 'null') ? rawApiKey.trim() : null;
