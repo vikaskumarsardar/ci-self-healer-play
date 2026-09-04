@@ -307,9 +307,15 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
 }
 
 async function callGeminiApi(apiKey, model, logText, context) {
-  const targetModel = model || 'gemini-2.0-flash';
+  const targetModel = model || 'gemini-3.7-flash';
   try { console.error(`[Gemini LLM] Querying model ${targetModel}...`); } catch {}
-  return await callGeminiApiSingle(apiKey, targetModel, logText, context);
+  let result = await callGeminiApiSingle(apiKey, targetModel, logText, context);
+  if (result && result.error && (result.error.includes('503') || result.error.includes('high demand') || result.error.includes('429'))) {
+    const fallbackModel = targetModel === 'gemini-2.0-flash' ? 'gemini-1.5-flash' : 'gemini-2.0-flash';
+    try { console.error(`[Gemini LLM] High demand on ${targetModel}. Retrying automatically with ${fallbackModel}...`); } catch {}
+    result = await callGeminiApiSingle(apiKey, fallbackModel, logText, context);
+  }
+  return result;
 }
 
 function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
