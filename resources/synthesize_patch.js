@@ -500,6 +500,8 @@ async function main() {
       break;
     }
 
+    finalDiagnosis = aiDiagnosis;
+
     // Normalize action and default missing targets before validation
     let actionNorm = (aiDiagnosis.action || '').toUpperCase().trim();
     if (!actionNorm || actionNorm === 'REFACTOR' || actionNorm === 'MODIFY' || actionNorm === 'FIX' || actionNorm === 'MODIFY_CODE' || actionNorm === 'UPDATE_FILE' || actionNorm === 'FIX_SYNTAX' || actionNorm === 'REFACTOR_CODE') {
