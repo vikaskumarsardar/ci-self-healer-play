@@ -26,43 +26,50 @@ Return ONLY raw JSON matching this exact schema:
 }`;
 
 function resolveApiKey(argKey, cwd) {
+  let key = null;
   if (argKey && !argKey.startsWith('$') && argKey !== 'undefined' && argKey !== 'null' && !argKey.startsWith('AQ.')) {
-    return argKey;
+    key = argKey;
   }
-  if (argKey && argKey.startsWith('$')) {
+  if (!key && argKey && argKey.startsWith('$')) {
     const envVal = process.env[argKey.slice(1)];
-    if (envVal && !envVal.startsWith('AQ.')) return envVal;
+    if (envVal && !envVal.startsWith('AQ.')) key = envVal;
   }
-  const envCandidates = [process.env.OPENAI_API_KEY, process.env.GEMINI_API_KEY, process.env.LLM_API_KEY, process.env.api_key];
-  for (const k of envCandidates) {
-    if (k && !k.startsWith('AQ.')) return k;
+  if (!key) {
+    const envCandidates = [process.env.OPENAI_API_KEY, process.env.GEMINI_API_KEY, process.env.LLM_API_KEY, process.env.api_key];
+    for (const k of envCandidates) {
+      if (k && !k.startsWith('AQ.')) { key = k; break; }
+    }
   }
 
-  const keyFiles = [
-    path.join(os.homedir(), '.rote', 'keys.json'),
-    path.join(os.homedir(), '.rote', 'config', 'keys.json'),
-    path.join(os.homedir(), '.env'),
-    path.join(cwd, '.env'),
-    path.join(cwd, '.env.local')
-  ];
+  if (!key) {
+    const keyFiles = [
+      path.join(os.homedir(), '.rote', 'keys.json'),
+      path.join(os.homedir(), '.rote', 'config', 'keys.json'),
+      path.join(os.homedir(), '.env'),
+      path.join(cwd, '.env'),
+      path.join(cwd, '.env.local')
+    ];
 
-  for (const kf of keyFiles) {
-    try {
-      if (fs.existsSync(kf)) {
-        const content = fs.readFileSync(kf, 'utf8');
-        if (kf.endsWith('.json')) {
-          const parsed = JSON.parse(content);
-          if (parsed.OPENAI_API_KEY && !parsed.OPENAI_API_KEY.startsWith('AQ.')) return parsed.OPENAI_API_KEY;
-          if (parsed.GEMINI_API_KEY && !parsed.GEMINI_API_KEY.startsWith('AQ.')) return parsed.GEMINI_API_KEY;
-          if (parsed.api_key && !parsed.api_key.startsWith('AQ.')) return parsed.api_key;
-        } else {
-          const match = content.match(/(?:OPENAI_API_KEY|GEMINI_API_KEY|LLM_API_KEY|API_KEY)=([^\s"']+)/i);
-          if (match && match[1] && !match[1].startsWith('AQ.')) return match[1];
+    for (const kf of keyFiles) {
+      try {
+        if (fs.existsSync(kf)) {
+          const content = fs.readFileSync(kf, 'utf8');
+          if (kf.endsWith('.json')) {
+            const parsed = JSON.parse(content);
+            if (parsed.OPENAI_API_KEY && !parsed.OPENAI_API_KEY.startsWith('AQ.')) key = parsed.OPENAI_API_KEY;
+            else if (parsed.GEMINI_API_KEY && !parsed.GEMINI_API_KEY.startsWith('AQ.')) key = parsed.GEMINI_API_KEY;
+            else if (parsed.api_key && !parsed.api_key.startsWith('AQ.')) key = parsed.api_key;
+          } else {
+            const match = content.match(/(?:OPENAI_API_KEY|GEMINI_API_KEY|LLM_API_KEY|API_KEY)=([^\s"']+)/i);
+            if (match && match[1] && !match[1].startsWith('AQ.')) key = match[1];
+          }
+          if (key) break;
         }
-      }
-    } catch {}
+      } catch {}
+    }
   }
-  return null;
+
+  return key ? key.replace(/['"\r\n\t]/g, '').trim() : null;
 }
 
 function normalizeDiagnosisSchema(parsed) {
