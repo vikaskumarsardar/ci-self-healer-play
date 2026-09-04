@@ -63,6 +63,9 @@ const provider = providerArg || process.env.LLM_PROVIDER || (apiKey && (apiKey.s
 const isGemini = provider === 'gemini';
 
 let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-3.7-flash' : 'gpt-4o-mini');
+if (model === 'gemini-3.5-flash') {
+  model = 'gemini-3.7-flash';
+}
 
 try {
   console.error(`[synthesize_patch DEBUG] cwd=${cwd}, hasApiKey=${Boolean(apiKey)}, apiKeyLength=${apiKey ? apiKey.length : 0}, provider=${provider}, model=${model}`);
