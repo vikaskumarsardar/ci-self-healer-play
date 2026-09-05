@@ -58,7 +58,7 @@ if (!testPassed) {
     commandsRun: commandsToRun,
     cwd
   }));
-  process.exit(1);
+  process.exit(0);
 }
 
 const deliveryRes = executeGitDelivery(cwd, pushStrategy, autoPush, githubToken);

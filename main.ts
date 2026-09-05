@@ -167,14 +167,30 @@ function parseBodyJson(body: unknown): any {
   let curr: any = body;
   for (let i = 0; i < 5; i++) {
     if (curr && typeof curr === "object") {
-      if (curr.project || curr.engine || curr.status === "DISCOVERED" || curr.status === "CAPTURED" || curr.status === "VERIFIED" || curr.status === "DIAGNOSED") return curr;
-      if (curr.stdout) curr = curr.stdout;
+      if (curr.project || curr.engine || curr.errorReason || curr.status === "DISCOVERED" || curr.status === "CAPTURED" || curr.status === "VERIFIED" || curr.status === "DIAGNOSED" || curr.status === "REJECTED") return curr;
+      if (curr.output) curr = curr.output;
+      else if (curr.stdout) curr = curr.stdout;
       else if (curr.body) curr = curr.body;
       else if (curr.text) curr = curr.text;
+      else if (curr.stderr && typeof curr.stderr === "string" && curr.stderr.trim()) {
+        return { status: "REJECTED", errorReason: curr.stderr.trim().split("\n")[0] };
+      }
+      else if (curr.message && typeof curr.message === "string" && curr.message.trim()) {
+        return { status: "REJECTED", errorReason: curr.message.trim() };
+      }
       else break;
     }
     if (typeof curr === "string") {
-      try { curr = JSON.parse(curr.trim()); } catch { break; }
+      try {
+        const parsed = JSON.parse(curr.trim());
+        curr = parsed;
+      } catch {
+        const match = curr.match(/\{[\s\S]*\}/);
+        if (match) {
+          try { curr = JSON.parse(match[0]); continue; } catch {}
+        }
+        return { status: "REJECTED", errorReason: curr.trim() };
+      }
     }
   }
   return (curr && typeof curr === "object") ? curr : null;
@@ -190,15 +206,26 @@ renderedSteps["capture_logs"] = renderStep(captureLogsStep);
 renderedSteps["synthesize_patch"] = renderStep(synthesizePatchStep);
 renderedSteps["verify_suite"] = renderStep(verifySuiteStep);
 
-// Safely parse step observations
-const discoverData = discoverCiStep.outcome.status === "completed" ? parseBodyJson(discoverCiStep.outcome.output.body) : null;
-const synthData = synthesizePatchStep.outcome.status === "completed" ? parseBodyJson(synthesizePatchStep.outcome.output.body) : null;
-const verifyData = verifySuiteStep.outcome.status === "completed" ? parseBodyJson(verifySuiteStep.outcome.output.body) : null;
+// Safely parse step observations (even on failure so error details are surfaced)
+const discoverData = parseBodyJson(discoverCiStep.outcome.output?.body) || parseBodyJson(discoverCiStep.outcome.output);
+const synthData = parseBodyJson(synthesizePatchStep.outcome.output?.body) || parseBodyJson(synthesizePatchStep.outcome.output);
+const verifyData = parseBodyJson(verifySuiteStep.outcome.output?.body) || parseBodyJson(verifySuiteStep.outcome.output);
 
 const projLang = discoverData?.project?.language || discoverData?.language || 'node';
 const projRunner = discoverData?.project?.runner || discoverData?.runner || 'npm';
 const engine = synthData?.engine || 'GEMINI_CLOUD_LLM';
-const healedDetails = synthData?.healedActionDetails || synthData?.aiDiagnosis?.explanation || synthData?.reason || synthData?.errorReason || (synthData?.patchApplied === false ? 'LLM synthesis returned no patch' : 'Self-healing patch applied and verified');
+
+const stepErrMsg = synthesizePatchStep.outcome.output?.stderr || synthesizePatchStep.outcome.output?.message || synthesizePatchStep.outcome.error;
+const fallbackErr = stepErrMsg ? (typeof stepErrMsg === 'string' ? stepErrMsg.split('\n')[0] : JSON.stringify(stepErrMsg)) : `Patch synthesis failed (${synthesizePatchStep.outcome.status})`;
+
+let healedDetails: string;
+
+if (synthData?.status === "REJECTED" || synthesizePatchStep.outcome.status !== "completed") {
+  const reasonText = synthData?.errorReason || synthData?.reason || (stepErrMsg ? (typeof stepErrMsg === 'string' ? stepErrMsg.split('\n')[0] : JSON.stringify(stepErrMsg)) : fallbackErr);
+  healedDetails = reasonText.toLowerCase().startsWith("failed") ? reasonText : `Failed: ${reasonText}`;
+} else {
+  healedDetails = synthData?.healedActionDetails || synthData?.aiDiagnosis?.explanation || 'Self-healing patch applied and verified';
+}
 
 const statusVal =
   (typeof verifyData?.status === 'string'

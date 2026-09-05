@@ -24,7 +24,6 @@ if (logFilePath && fs.existsSync(logFilePath)) {
       const errErr = err.stderr ? err.stderr.toString() : '';
       const combined = (errOut + '\n' + errErr).trim() || err.message;
       rawLogText += `\n=== COMMAND FAILED: ${cmd} ===\n` + combined;
-      break;
     }
   }
 }

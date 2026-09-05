@@ -8,36 +8,40 @@ const SYSTEM_PROMPT = `You are an Autonomous Universal CI/CD Self-Healing AI Eng
 Analyze the CI error log and project context below.
 Diagnose the root cause of the failure and synthesize a surgical repair.
 
-UNIVERSAL GUIDANCE:
-- PRESERVE LOGIC INTENT: Never delete user variable assignments, function calls, or execution statements unless they are syntactically invalid. Keep all business logic and reassignment lines intact.
-- SURGICAL DECLARATION FIXES: When repairing immutability or reassignment errors (e.g. constant reassignment), change only the binding/declaration keyword (e.g. const -> let) on the initial declaration line. Preserve all subsequent variable reads and writes intact.
-- SURGICAL LINE EDITS: Always prefer precise "lineEdits" over full file replacements to avoid dropping surrounding code, comments, or structure.
-- TOKEN & TREE BALANCE: For unclosed tags, brackets, parens, or strings, balance opening and closing tokens in their exact syntactic hierarchy position without dropping sibling or parent nodes.
+STRICT PRESERVATION & SURGICAL REPAIR GUIDANCE:
+- MANDATORY ACTIONS & LINE EDITS: You MUST supply valid "actions" with precise, non-empty "lineEdits" targeting the failing files based on the line numbers in the provided file context. NEVER return an empty actions array [].
+- ESLINT & LINT CONFIG FIXES: If a linter fails due to unknown/missing rule names (e.g. "Could not find rule ..."), add those rules set to 'off' in the project's linter config file under the rules section using lineEdits.
+- CONST DECLARATION FIXES: When repairing constant variable reassignment errors (reassigning a "const" variable), change ONLY "const" to "let" on its initial declaration line using lineEdits.
+- JSX & HTML TAG BALANCE: For unclosed or mismatched tags, supply lineEdits adding ONLY the missing closing tag. Never delete parent, child, or sibling nodes.
+- MULTI-FILE REPAIRS: If multiple files contain lint, build, or test errors, supply a repair action for EVERY failing file in the "actions" array so all issues are healed simultaneously.
 - ZERO ERRORS: Ensure the resulting patch produces clean code with ZERO compiler, lint, or test failures.
 
-Return ONLY raw JSON matching this exact schema:
+Return ONLY raw JSON matching this schema:
 {
-  "action": "INSTALL_DEPENDENCY" | "REFACTOR_CODE" | "SYNC_ENV_KEY" | "FIX_CONFIG",
-  "target": "relative/file/path/or/package_name",
-  "lineEdits": [{ "startLine": number, "endLine": number, "replacement": "string" }],
-  "replacementCode": "Complete repaired source code for the target file",
-  "envKey": "Key name if action is SYNC_ENV_KEY, otherwise null",
-  "explanation": "Brief description of the diagnosis and fix"
+  "actions": [
+    {
+      "action": "FIX_CONFIG" | "REFACTOR_CODE" | "INSTALL_DEPENDENCY" | "SYNC_ENV_KEY",
+      "target": "relative/file/path",
+      "lineEdits": [{ "startLine": number, "endLine": number, "replacement": "string" }],
+      "explanation": "Brief description of the fix for this file"
+    }
+  ],
+  "explanation": "Brief summary of all repairs"
 }`;
 
 function resolveApiKey(argKey, cwd) {
   let key = null;
-  if (argKey && !argKey.startsWith('$') && argKey !== 'undefined' && argKey !== 'null' && !argKey.startsWith('AQ.')) {
+  if (argKey && !argKey.startsWith('$') && argKey !== 'undefined' && argKey !== 'null') {
     key = argKey;
   }
   if (!key && argKey && argKey.startsWith('$')) {
     const envVal = process.env[argKey.slice(1)];
-    if (envVal && !envVal.startsWith('AQ.')) key = envVal;
+    if (envVal) key = envVal;
   }
   if (!key) {
-    const envCandidates = [process.env.OPENAI_API_KEY, process.env.GEMINI_API_KEY, process.env.LLM_API_KEY, process.env.api_key];
+    const envCandidates = [process.env.GEMINI_API_KEY, process.env.OPENAI_API_KEY, process.env.LLM_API_KEY, process.env.api_key];
     for (const k of envCandidates) {
-      if (k && !k.startsWith('AQ.')) { key = k; break; }
+      if (k) { key = k; break; }
     }
   }
 
@@ -56,27 +60,27 @@ function resolveApiKey(argKey, cwd) {
           const content = fs.readFileSync(kf, 'utf8');
           if (kf.endsWith('.json')) {
             const parsed = JSON.parse(content);
-            if (parsed.OPENAI_API_KEY && !parsed.OPENAI_API_KEY.startsWith('AQ.')) key = parsed.OPENAI_API_KEY;
-            else if (parsed.GEMINI_API_KEY && !parsed.GEMINI_API_KEY.startsWith('AQ.')) key = parsed.GEMINI_API_KEY;
-            else if (parsed.api_key && !parsed.api_key.startsWith('AQ.')) key = parsed.api_key;
+            if (parsed.GEMINI_API_KEY) key = parsed.GEMINI_API_KEY;
+            else if (parsed.OPENAI_API_KEY) key = parsed.OPENAI_API_KEY;
+            else if (parsed.api_key) key = parsed.api_key;
           } else {
-            const match = content.match(/(?:OPENAI_API_KEY|GEMINI_API_KEY|LLM_API_KEY|API_KEY)=([^\s"']+)/i);
-            if (match && match[1] && !match[1].startsWith('AQ.')) key = match[1];
+            const match = content.match(/(?:GEMINI_API_KEY|OPENAI_API_KEY|LLM_API_KEY|API_KEY)=([^\s"']+)/i);
+            if (match && match[1]) key = match[1];
           }
           if (key) break;
         }
       } catch {}
     }
   }
-
   return key ? key.replace(/['"\r\n\t]/g, '').trim() : null;
 }
 
 function normalizeDiagnosisSchema(parsed) {
   if (!parsed || typeof parsed !== 'object') return null;
+  
+  let actions = [];
   if (Array.isArray(parsed.actions) && parsed.actions.length > 0) {
-    const act = parsed.actions[0];
-    return {
+    actions = parsed.actions.map(act => ({
       action: act.action || act.type || 'REFACTOR_CODE',
       target: act.target || act.filePath || act.file || parsed.target,
       lineEdits: (act.lineEdits || act.edits || []).map(e => ({
@@ -84,12 +88,35 @@ function normalizeDiagnosisSchema(parsed) {
         endLine: Number(e.endLine),
         replacement: e.replacement
       })),
-      replacementCode: act.replacementCode || act.code || parsed.replacementCode || null,
-      envKey: act.envKey || parsed.envKey || null,
-      explanation: parsed.explanation || act.explanation || 'Self-healing patch synthesized'
-    };
+      replacementCode: act.replacementCode || act.code || null,
+      envKey: act.envKey || null,
+      explanation: act.explanation || parsed.explanation || 'Self-healing patch synthesized'
+    }));
+  } else if (parsed.action || parsed.target) {
+    actions = [{
+      action: parsed.action || 'REFACTOR_CODE',
+      target: parsed.target,
+      lineEdits: (parsed.lineEdits || parsed.edits || []).map(e => ({
+        startLine: Number(e.startLine),
+        endLine: Number(e.endLine),
+        replacement: e.replacement
+      })),
+      replacementCode: parsed.replacementCode || null,
+      envKey: parsed.envKey || null,
+      explanation: parsed.explanation || 'Self-healing patch synthesized'
+    }];
   }
-  return parsed;
+
+  const primaryAction = actions[0] || {};
+  return {
+    action: primaryAction.action || 'REFACTOR_CODE',
+    target: primaryAction.target,
+    lineEdits: primaryAction.lineEdits || [],
+    replacementCode: primaryAction.replacementCode || null,
+    envKey: primaryAction.envKey || null,
+    explanation: parsed.explanation || primaryAction.explanation || 'Self-healing patch synthesized',
+    actions: actions
+  };
 }
 
 function parseLlmJson(rawText) {
@@ -117,7 +144,6 @@ function parseLlmJson(rawText) {
 function callGeminiApiSingle(apiKey, model, logText, context) {
   return new Promise((resolve) => {
     if (!apiKey) return resolve({ error: 'NO_API_KEY: Gemini API Key missing.' });
-    if (apiKey.startsWith('AQ')) return resolve({ error: 'INVALID_KEY: Rote platform access token detected.' });
 
     const targetModel = model || 'gemini-1.5-flash';
     const options = {
@@ -162,8 +188,8 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
         } catch { resolve(null); }
       });
     });
-    req.on('error', () => resolve(null));
-    req.setTimeout(45000, () => { req.destroy(); resolve(null); });
+    req.on('error', (err) => resolve({ error: `Network error: ${err?.message || 'Connection failed'}` }));
+    req.setTimeout(12000, () => { req.destroy(); resolve({ error: 'Network error: Gemini API request timed out after 12s' }); });
     req.write(payload);
     req.end();
   });
@@ -171,10 +197,9 @@ function callGeminiApiSingle(apiKey, model, logText, context) {
 
 async function callGeminiApi(apiKey, model, logText, context) {
   if (!apiKey) return { error: 'NO_API_KEY: Gemini API Key missing.' };
-  if (apiKey.startsWith('AQ')) return { error: 'INVALID_KEY: Rote token detected.' };
 
-  const primaryModel = model || 'gemini-1.5-flash';
-  const fallbackCandidates = [primaryModel, 'gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'].filter((m, idx, self) => m && self.indexOf(m) === idx);
+  const primaryModel = model || 'gemini-3.5-flash';
+  const fallbackCandidates = [primaryModel, 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'].filter((m, idx, self) => m && self.indexOf(m) === idx);
 
   let lastResult = null;
   for (const targetModel of fallbackCandidates) {
@@ -182,6 +207,9 @@ async function callGeminiApi(apiKey, model, logText, context) {
     if (result && !result.error) return result;
     lastResult = result;
     if (result?.error && (result.error.includes('NO_API_KEY') || result.error.includes('INVALID_KEY'))) return result;
+    if (result?.error && result.error.includes('503')) {
+      await new Promise(r => setTimeout(r, 600));
+    }
   }
   return lastResult;
 }
@@ -219,10 +247,10 @@ function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
 
     const httpModule = isHttps ? https : http;
     const req = httpModule.request(options, (res) => {
-      if (res.statusCode !== 200) return resolve(null);
       let body = '';
       res.on('data', chunk => body += chunk);
       res.on('end', () => {
+        if (res.statusCode !== 200) return resolve({ error: `API Error (HTTP ${res.statusCode}): ${body.slice(0, 300)}` });
         try {
           const parsed = JSON.parse(body);
           const text = parsed.choices?.[0]?.message?.content || '';
@@ -230,8 +258,8 @@ function callOpenAiApi(apiKey, model, logText, context, customBaseUrl) {
         } catch { resolve(null); }
       });
     });
-    req.on('error', () => resolve(null));
-    req.setTimeout(12000, () => { req.destroy(); resolve(null); });
+    req.on('error', (err) => resolve({ error: `Network error: ${err?.message || 'Connection failed'}` }));
+    req.setTimeout(12000, () => { req.destroy(); resolve({ error: 'Network error: OpenAI API request timed out after 12s' }); });
     req.write(payload);
     req.end();
   });

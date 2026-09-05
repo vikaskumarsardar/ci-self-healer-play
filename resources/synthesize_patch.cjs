@@ -24,18 +24,20 @@ const rawProvider = getArgValue('provider');
 const providerArg = (rawProvider && !rawProvider.startsWith('$') && rawProvider.trim() !== '' && rawProvider !== 'undefined' && rawProvider !== 'null') ? rawProvider.trim().toLowerCase() : null;
 
 let provider = providerArg || process.env.LLM_PROVIDER;
+if (apiKey && (apiKey.startsWith('AIza') || apiKey.startsWith('AQ.'))) {
+  provider = 'gemini';
+}
 if (!provider) {
   if (apiKey && apiKey.startsWith('sk-')) provider = 'openai';
-  else if (apiKey && apiKey.startsWith('AIza')) provider = 'gemini';
-  else provider = 'openai';
+  else provider = 'gemini';
 }
 
-if (baseUrlArg && (baseUrlArg.includes('11434') || baseUrlArg.includes('localhost') || baseUrlArg.includes('127.0.0.1')) && provider !== 'ollama' && apiKey && (apiKey.startsWith('sk-') || apiKey.startsWith('AIza'))) {
+if (baseUrlArg && (baseUrlArg.includes('11434') || baseUrlArg.includes('localhost') || baseUrlArg.includes('127.0.0.1')) && provider !== 'ollama' && apiKey && (apiKey.startsWith('sk-') || apiKey.startsWith('AIza') || apiKey.startsWith('AQ.'))) {
   baseUrlArg = null;
 }
 
 const isGemini = provider === 'gemini';
-let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-1.5-flash' : 'gpt-4o-mini');
+let model = modelArg || process.env.LLM_MODEL || (isGemini ? 'gemini-3.5-flash' : 'gpt-4o-mini');
 
 let rawLogText = '';
 if (logFilePath && fs.existsSync(logFilePath)) {
@@ -139,9 +141,9 @@ async function main() {
       : `${cleanRawLogText}\n\n--- PREVIOUS ATTEMPT ${attempt - 1} PATCH FAILED WITH ERROR ---\n${redactSecrets(previousErrorLog)}`;
 
     const focusedContext = redactSecrets(getStackFocusedContext(currentLogText));
-    const projectFiles = getProjectFiles(cwd).filter(f => !focusedContext.includes(`--- HIGH PRIORITY FAILING FILE: ${f.path}`));
+    const projectFiles = getProjectFiles(cwd).filter(f => !focusedContext.includes(`--- HIGH PRIORITY FAILING FILE: ${f.path}`)).slice(0, 8);
     const filesContext = (focusedContext ? focusedContext + '\n\n' : '') + projectFiles.map(f => {
-      const numberedContent = f.content.slice(0, 3000).split('\n').map((l, i) => `${i + 1}: ${l}`).join('\n');
+      const numberedContent = f.content.slice(0, 2000).split('\n').map((l, i) => `${i + 1}: ${l}`).join('\n');
       return `--- FILE: ${f.path} ---\n${redactSecrets(numberedContent)}`;
     }).join('\n\n');
 
@@ -183,7 +185,9 @@ async function main() {
       break;
     } else {
       errorReason = patchRes.error || 'Failed to apply patch';
-      break;
+      if (patchRes.error && (patchRes.error.startsWith('Destructive replacement rejected') || patchRes.error.startsWith('Path traversal'))) {
+        break;
+      }
     }
   }
 
@@ -204,11 +208,24 @@ async function main() {
     errorReason: errorReason || (apiKey ? 'LLM diagnosis unavailable' : 'No LLM API key configured. Please set OPENAI_API_KEY or GEMINI_API_KEY environment variable, or pass api_key=...'),
     durationSec,
     attemptsExecuted: attemptsCount,
-    targetFile: finalDiagnosis?.target || null,
+    targetFile: (finalDiagnosis?.actions && finalDiagnosis.actions.length > 0) ? finalDiagnosis.actions.map(a => a.target).filter(Boolean).join(', ') : (finalDiagnosis?.target || null),
     cwd
   }));
 
-  if (isError) process.exit(1);
+  if (isError) {
+    // Exit with 0 so Rote presentation SDK receives structured JSON body with errorReason
+    process.exit(0);
+  }
 }
 
-main();
+main().catch((err) => {
+  const errStr = (err && err.message) ? err.message : String(err);
+  process.stdout.write(JSON.stringify({
+    status: 'REJECTED',
+    engine: 'NO_LLM_DIAGNOSIS',
+    autoHealed: false,
+    healedActionDetails: null,
+    errorReason: `Patch synthesis error: ${errStr}`
+  }));
+  process.exit(1);
+});
